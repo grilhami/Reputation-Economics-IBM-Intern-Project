@@ -8,6 +8,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
+from .utils import retrieve_date_year
+
+FIRST_YEAR = 2017
+SECOND_YEAR = 2018
+
 class DetikScraper(scrapy.Spider):
     name = "detik_scraper"
     allowed_domains = ["www.detil.com"]
@@ -40,4 +45,28 @@ class DetikScraper(scrapy.Spider):
         
         link_not_none = lambda link: link.get_attribute("href") is not None
         link_list = [link.get_attribute("href") for link in link_list if link_not_none]
+
+        # index of last elemtn in link_list
+        last_idx = -1
+
+        print("="*20)
+        print("GETTING LAST INDEX")
+        print("="*20)
+
+        # Get the latest year from the latest news
+        for _ in range(len(link_list)):
+            try:
+                last_news_year = retrieve_date_year(link_list[last_idx], "div", "class", "date")
+                print(f"Found latest year at index {last_idx}")
+                print(f"Latest year is {last_news_year}")
+                break
+            except Exception as e:
+                print(f"Can't find latest year with index {last_idx}")
+            last_idx -= 1
+
+        
+        if last_news_year < FIRST_YEAR:
+            all_link_list = link_list
+        else:
+            all_link_list = []
 
