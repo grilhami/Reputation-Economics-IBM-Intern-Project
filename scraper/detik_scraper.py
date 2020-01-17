@@ -17,17 +17,19 @@ KEYWORD = "tenaga nuklir indonesia"
 
 class DetikScraper(scrapy.Spider):
     name = "detik_scraper"
-    allowed_domains = ["www.detil.com"]
+    allowed_domains = ["www.detik.com"]
     start_urls = ["https://www.detik.com/"]
 
     def __init__(self):
+        options = Options()
+        options.headless = True
         chromedriver_path = "/mnt/c/Users/Gilang R Ilhami/Desktop/personal_projects/ibm_stuff/chromedriver.exe"
-        # self.driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
+        self.driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
 
         # Commend code above, and 
         # uncomment code below
         # to remove headless scraping.
-        self.driver = webdriver.Chrome(executable_path=chromedriver_path)
+        # self.driver = webdriver.Chrome(executable_path=chromedriver_path)
 
     def parse(self, response):
 
@@ -175,7 +177,11 @@ class DetikScraper(scrapy.Spider):
             try:
                 content_date = retrieve_date_year(links[content_index],"div", "class", "date")
             except:
-                content_date = retrieve_date_year(links[content_index],"div", "class", "detail__date")
+                try:
+                    content_date = retrieve_date_year(links[content_index],"div", "class", "detail__date")
+                except:
+                    print(f"{link[content_index]} cannot be scraped.")
+
             print(content_date)
 
             # Seperating First Year and Second Year contents
