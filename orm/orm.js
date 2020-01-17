@@ -14,7 +14,7 @@ ibmdb.open(koneksi, function(err, conn) {
       console.log(data);
     }
 
-    conn.close(function () {
+    conn.close(function() {
       console.log('done');
     });
 
