@@ -3,6 +3,41 @@ import ibm_db
 conn = ibm_db.connect("DATABASE=BLUDB;HOSTNAME=dashdb-txn-sbox-yp-dal09-03.services.dal.bluemix.net;PORT=50000;PROTOCOL=TCPIP;UID=ffz03558;PWD=6s50g+3tr7slj5cb;", "", "")
 from datetime import date
 
+
+
+def insert_to_db(
+                company_name,
+                cxo_name,
+                path_to_parsed_pdf,
+                path_to_youtube_transcript,
+                links,
+                saved_date
+                ):
+    """
+        A function for storing company data to the database
+
+        Arguments:
+
+        company_name (str): Name of company
+        cxo_name (str): name of cxo
+        path_to_parsed_pdf (str): path to the parsed pdf file stored in IBM COS
+        path_to_youtube_transcript (str): path to the youtube transcript file stored in IBM COS
+        links (list): list of all news urls
+        saved_date (datetime): date of when object is stored
+
+        Return: None
+
+    """
+
+    # TODO: Implement code below
+
+def get_analysis_data():
+    """
+        Getting the analysis ready data
+    """
+
+    # TODO: Implement code below
+
 # Function to include
 kode = input("Kode Perusahaan: ")
 nama = input("Company Name: ")

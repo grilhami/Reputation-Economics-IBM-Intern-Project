@@ -1,3 +1,20 @@
+function insertToDB(
+                    companyName,
+                    cxoName,
+                    pathToParsedPdf,
+                    pathToYoutubeTranscript,
+                    links,
+                    savedDate
+                    ) {
+  // TODO: Implement code below
+
+}
+
+function getAnalysisData() {
+  // TODO: Implement code below
+  
+}
+
 var ibmdb = require('ibm_db'), 
     koneksi = "DATABASE=BLUDB;HOSTNAME=dashdb-txn-sbox-yp-dal09-03.services.dal.bluemix.net;PORT=50000;PROTOCOL=TCPIP;UID=ffz03558;PWD=6s50g+3tr7slj5cb;";
 
