@@ -1,7 +1,12 @@
 # You HAVE to use Python 3.5.x or else the IBM_DB library won't work!
+# Libraries:
+# - pip install ibm_db
+# - pip install PrettyTable
+
 import ibm_db
 conn = ibm_db.connect("DATABASE=BLUDB;HOSTNAME=dashdb-txn-sbox-yp-dal09-03.services.dal.bluemix.net;PORT=50000;PROTOCOL=TCPIP;UID=ffz03558;PWD=6s50g+3tr7slj5cb;", "", "")
 from datetime import date
+from prettytable import PrettyTable
 
 ##### Function to store company data to the database.
 #        Arguments:
@@ -44,14 +49,18 @@ def get_analysis_data():
     """
 
     # TODO: Implement code below
+    sql = "SELECT * FROM FFZ03558.SOURCE"
+    stmt = ibm_db.exec_immediate(conn, sql)
+    tabel = PrettyTable()
+    tabel.field_names = ["Name", "CXO", "Path (PDF)", "Path (YouTube)", "Links", "Save Date"]   
+
+    tuple = ibm_db.fetch_tuple(stmt)
+    while tuple != False:
+        tabel.add_row([tuple[0], tuple[1], tuple[2], tuple[3], tuple[4], tuple[5]])
+        tuple = ibm_db.fetch_tuple(stmt)
+
+    print(tabel)
 
 ##### SELECT Statement to call all the data inside the database.
-# sql = "SELECT * FROM FFZ03558.SOURCE"
-# stmt = ibm_db.exec_immediate(conn, sql)
-
-# tuple = ibm_db.fetch_tuple(stmt)
-# while tuple != False:
-#    print("The ID is: ", tuple[0])
-#    print("The name is: ", tuple[1])
-#    tuple = ibm_db.fetch_tuple(stmt)
+# get_analysis_data()
 ##### End of SELECT Statement.
