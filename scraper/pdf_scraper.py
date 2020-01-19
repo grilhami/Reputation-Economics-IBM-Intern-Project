@@ -9,13 +9,15 @@ from io import BytesIO
 from PyPDF2 import PdfFileWriter, PdfFileReader
 from ibm_botocore.client import Config, ClientError
 
-ANNUAL_REPORT_YEAR = 2018
+from settings import (
+    COS_ENDPOINT,
+    COS_API_KEY_ID,
+    COS_AUTH_ENDPOINT,
+    COS_RESOURCE_CRN 
+)
 
-# Constants for IBM COS values
-COS_ENDPOINT = "https://s3.us-south.cloud-object-storage.appdomain.cloud"
-COS_API_KEY_ID = "mXVxqXKfgF2prSMLZjgF3rLjS8whm2OwOHUXUhagt6h3"
-COS_AUTH_ENDPOINT = "https://iam.cloud.ibm.com/identity/token"
-COS_RESOURCE_CRN = "crn:v1:bluemix:public:cloud-object-storage:global:a/fad8106ae3d1bfc1babe2b0d8e668102:0705869f-eda4-4736-9782-22bd144e4ed5::"
+ANNUAL_REPORT_YEAR = 2018
+USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
 
 
 # Create resource
@@ -28,7 +30,7 @@ cos = ibm_boto3.resource("s3",
             
 )
 
-def pdf_scraper(url, company, page_range, mode="both"):
+def scraper(url, company, page_range, mode="both"):
     # Find the company name and page range of url
     company = company.replace(" ", "_")
     
@@ -39,10 +41,8 @@ def pdf_scraper(url, company, page_range, mode="both"):
         os.makedirs(pdf_path)
     
     print("Fetching document from URL...")
-    
-    user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
 
-    headers={'User-Agent':user_agent,} 
+    headers={'User-Agent':USER_AGENT} 
     
     request=urllib.request.Request(url,None,headers)
     # Fetch data from url

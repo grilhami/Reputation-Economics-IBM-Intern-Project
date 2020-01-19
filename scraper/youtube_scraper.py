@@ -1,6 +1,26 @@
+import os
 import re
+import ibm_boto3
 
+from datetime import datetime
 from pytube import YouTube
+from ibm_botocore.client import Config, ClientError
+
+from settings import (
+    COS_ENDPOINT,
+    COS_API_KEY_ID,
+    COS_AUTH_ENDPOINT,
+    COS_RESOURCE_CRN 
+)
+
+cos = ibm_boto3.resource("s3",
+    ibm_api_key_id=COS_API_KEY_ID,
+    ibm_auth_endpoint=COS_AUTH_ENDPOINT,
+    config=Config(signature_version="oauth"),
+    endpoint_url=COS_ENDPOINT,
+    ibm_service_instance_id=COS_RESOURCE_CRN,
+            
+)
 
 def cleanhtml(raw_html):
     cleanr = re.compile('<.*?>')
@@ -34,12 +54,12 @@ def youtube_captions(url):
 
     return final_text, title
 
-def youtube_scraper(url, company):
+def scraper(url, company):
     
     company = company.replace(" ", "_")
     
     # Create path for original and parsed pdf
-    BASE_URL = "./assets/"
+    BASE_URL = "assets/"
     link_path = BASE_URL + f"{company}/youtube/"
 
     
