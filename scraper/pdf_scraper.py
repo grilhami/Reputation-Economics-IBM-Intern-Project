@@ -1,4 +1,3 @@
-import ibm_boto3
 import logging
 import urllib.request
 import os
@@ -7,30 +6,12 @@ import re
 from datetime import datetime
 from io import BytesIO
 from PyPDF2 import PdfFileWriter, PdfFileReader
-from ibm_botocore.client import Config, ClientError
 
-from settings import (
-    COS_ENDPOINT,
-    COS_API_KEY_ID,
-    COS_AUTH_ENDPOINT,
-    COS_RESOURCE_CRN 
-)
 
 ANNUAL_REPORT_YEAR = 2018
 USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
 
-
-# Create resource
-cos = ibm_boto3.resource("s3",
-    ibm_api_key_id=COS_API_KEY_ID,
-    ibm_auth_endpoint=COS_AUTH_ENDPOINT,
-    config=Config(signature_version="oauth"),
-    endpoint_url=COS_ENDPOINT,
-    ibm_service_instance_id=COS_RESOURCE_CRN,
-            
-)
-
-def scraper(url, company, page_range, mode="both"):
+def pdf_scraper(url, cos, company, page_range, mode="both"):
     # Find the company name and page range of url
     company = company.replace(" ", "_")
     

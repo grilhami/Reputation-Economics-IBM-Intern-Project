@@ -54,7 +54,7 @@ def youtube_captions(url):
 
     return final_text, title
 
-def scraper(url, company):
+def youtube_scraper(url, company):
     
     company = company.replace(" ", "_")
     

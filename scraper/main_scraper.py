@@ -1,5 +1,17 @@
 import argparse
+import ibm_boto3
 import pandas as pd
+
+from ibm_botocore.client import Config, ClientError
+from pdf_scraper import pdf_scraper
+from youtube_scraper import youtube_scraper
+
+from settings import (
+    COS_ENDPOINT,
+    COS_API_KEY_ID,
+    COS_AUTH_ENDPOINT,
+    COS_RESOURCE_CRN 
+)
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--path_to_excel", required=True, help="Path to the excel file that contains the company list.")
@@ -7,6 +19,65 @@ ap.add_argument("--path_to_excel", required=True, help="Path to the excel file t
 args = vars(ap.parse_args())
 
 PATH = args['path_to_excel']
+
+# Create resource
+cos = ibm_boto3.resource("s3",
+    ibm_api_key_id=COS_API_KEY_ID,
+    ibm_auth_endpoint=COS_AUTH_ENDPOINT,
+    config=Config(signature_version="oauth"),
+    endpoint_url=COS_ENDPOINT,
+    ibm_service_instance_id=COS_RESOURCE_CRN,
+            
+)
+
+def youtube_links(links):
+    links = links.split(",")
+    
+    if len(links) == 1:
+        return ""
+    else:
+        return links[1]
+
+def datetime_to_str(date):
+    if isinstance(date, datetime):
+        return date.strftime("%m-%d")
+    else:
+        return date
+
+def get_range(range_str):
+    """
+        Get page range from the 'Page' column
+    """
+    if isinstance(range_str, datetime):
+        range_str = datetime_to_str(range_str)
+    if "-" in range_str:
+        nums = range_str.split("-")
+        return (int(nums[0]), int(nums[1]))
+    else:
+        nums = range_str.split("to")
+        return (int(nums[0]), int(nums[1]))
+
+
+def process_excel(df):
+
+    columns = df.columns
+
+    fix_columns = lambda x: x.lower().replace(" ", "_")
+    
+    new_column_names = list(map(fix_columns, columns))
+    df.columns = new_column_names
+
+    df = df[df['cxo'].notnull()]
+
+    fix_companies = lambda x: x.lower().replace(" tbk.", "").replace(" (persero)","").replace("."," _")
+    df['company_name'] = df['company_name'].apply(fix_companies)
+
+    df['youtube_link'] = df['link'].apply(youtube_links)
+
+    # TODO: Complete process excel (baseline on Scraper Baseline jupyter notebook)
+
+
+
 
 def run_scraper(path):
     
@@ -24,6 +95,10 @@ def run_scraper(path):
         raise KeyError("column name 'comapny_name' is not found in excel file.")
     else:
         companies = company_df['company_name'].values.tolist()
+
+    pdf_urls = company_df['company_name'].values.tolist()
+    youtube_urls = company_df['company_name'].values.tolist()
+    
 
     return companies
 
