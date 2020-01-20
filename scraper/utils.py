@@ -1,9 +1,9 @@
 import requests
 import dateutil.parser
-import datetime
 import time
 
 from bs4 import BeautifulSoup
+from datetime import datetime
 from urllib.request import urlopen, Request
 from urllib.parse import urlparse
 

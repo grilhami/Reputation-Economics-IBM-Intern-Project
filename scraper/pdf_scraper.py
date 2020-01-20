@@ -11,7 +11,7 @@ from PyPDF2 import PdfFileWriter, PdfFileReader
 ANNUAL_REPORT_YEAR = 2018
 USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
 
-def pdf_scraper(url, cos, company, page_range, mode="both"):
+def pdf_scraper(cos, url, company, page_range, mode="both"):
     # Find the company name and page range of url
     company = company.replace(" ", "_")
     
