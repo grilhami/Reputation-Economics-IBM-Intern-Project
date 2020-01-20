@@ -7,6 +7,11 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen, Request
 from urllib.parse import urlparse
 
+
+####################################
+######## NEWS SCRAPER UTILS ########
+####################################
+
 MONTH_DICT = {'Januari': 'January',
             'Februari': 'February',
             'Maret': 'March',
@@ -41,6 +46,9 @@ USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)\
 MAX_RETRIES = 20
 
 def retrieve_date_year(url, html_tag, attribute, attribute_value):
+    """
+        Retrieve year from dates of content
+    """
     
     assert isinstance(url, str), f"Argument required str, but a {type(url)} was given."
     
@@ -81,3 +89,40 @@ def retrieve_date_year(url, html_tag, attribute, attribute_value):
     date_year = dateutil.parser.parse(date_text, fuzzy=True).year
 
     return date_year
+
+####################################
+######## PDF SCRAPER UTILS ########
+####################################
+
+def datetime_to_str(date):
+    if isinstance(date, datetime):
+        return date.strftime("%m-%d")
+    else:
+        return date
+
+def get_range(range_str):
+    """
+        Get page range from the 'Page' column
+    """
+    if isinstance(range_str, datetime):
+        range_str = datetime_to_str(range_str)
+    if "-" in range_str:
+        nums = range_str.split("-")
+        return (int(nums[0]), int(nums[1]))
+    else:
+        nums = range_str.split("to")
+        return (int(nums[0]), int(nums[1]))
+
+
+
+####################################
+###### YOUTUBE SCRAPER UTILS ######
+####################################
+
+def youtube_links(links):
+    links = links.split(",")
+    
+    if len(links) == 1:
+        return ""
+    else:
+        return links[1]

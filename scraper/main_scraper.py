@@ -13,6 +13,12 @@ from settings import (
     COS_RESOURCE_CRN 
 )
 
+from utils import (
+    youtube_links,
+    get_range,
+    datetime_to_str
+)
+
 ap = argparse.ArgumentParser()
 ap.add_argument("--path_to_excel", required=True, help="Path to the excel file that contains the company list.")
 
@@ -29,34 +35,6 @@ cos = ibm_boto3.resource("s3",
     ibm_service_instance_id=COS_RESOURCE_CRN,
             
 )
-
-def youtube_links(links):
-    links = links.split(",")
-    
-    if len(links) == 1:
-        return ""
-    else:
-        return links[1]
-
-def datetime_to_str(date):
-    if isinstance(date, datetime):
-        return date.strftime("%m-%d")
-    else:
-        return date
-
-def get_range(range_str):
-    """
-        Get page range from the 'Page' column
-    """
-    if isinstance(range_str, datetime):
-        range_str = datetime_to_str(range_str)
-    if "-" in range_str:
-        nums = range_str.split("-")
-        return (int(nums[0]), int(nums[1]))
-    else:
-        nums = range_str.split("to")
-        return (int(nums[0]), int(nums[1]))
-
 
 def process_excel(df):
 
