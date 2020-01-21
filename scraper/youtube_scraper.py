@@ -74,7 +74,7 @@ def youtube_scraper(cos, url, company):
     filename = re.sub("[^a-zA-Z0-9]+", "_", title.lower())
     file_path = link_path + filename + ".txt"
     
-    bucket_name = "cos-standard-7ry"
+    bucket_name = "cloud-object-storage-zg-cos-standard-275"
 
     cos.Object(bucket_name, file_path).put(Body=captions)
         

@@ -1,7 +1,11 @@
 import logging
 import urllib.request
+import io
 import os
+import requests as r
 import re
+import subprocess
+import tempfile
 
 from datetime import datetime
 from io import BytesIO
@@ -14,6 +18,7 @@ USER_AGENT = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/
 def pdf_scraper(cos, url, company, page_range, mode="both"):
     # Find the company name and page range of url
     company = company.replace(" ", "_")
+    url = url.replace(" ", "")
     
     # Create path for original and parsed pdf
     pdf_path = f"assets/{company}/annual_report/"
@@ -24,10 +29,10 @@ def pdf_scraper(cos, url, company, page_range, mode="both"):
     print("Fetching document from URL...")
 
     headers={'User-Agent':USER_AGENT} 
-    
-    request=urllib.request.Request(url,None,headers)
+
     # Fetch data from url
-    web_file = urllib.request.urlopen(request).read()
+    request = r.get(url, headers=headers)
+    web_file = request.content
     print("Data fetched.")
     
     # Convert to stringio
@@ -35,10 +40,45 @@ def pdf_scraper(cos, url, company, page_range, mode="both"):
     
     # Convert stringio to pdf reader
     pdf_file = PdfFileReader(file_io)
+    if pdf_file.isEncrypted:
+        try:
+            pdf_file.decrypt("")
+        except NotImplementedError:
+            # Decrypt the PDF with qpdf
+
+            temp_file = tempfile.NamedTemporaryFile(delete=False)
+            temp_file.write(web_file)
+            temp_file_name = temp_file.name
+            temp_file.close()
+
+            decrypted_filename = f"{temp_file_name}.decrypted"
+
+            # Need to install 'qpdf'
+            command = f"qpdf --password= --decrypt {temp_file_name} {decrypted_filename}"
+
+            try:
+                status = subprocess.check_call(
+                    command, shell=True, cwd="/tmp", timeout=300
+                )
+
+                with open(decrypted_filename, "rb") as f:
+                    decrypted_document_data = f.read()
+
+                pdf_file = PdfFileReader(
+                    io.BytesIO(decrypted_document_data)
+                )
+
+            finally:
+                os.unlink(temp_file_name)
+                try:
+                    # decrypted_filename may or may not have been created
+                    os.unlink(decrypted_filename)
+                except FileNotFoundError:
+                    pass
     
     pdf_writer = PdfFileWriter()
     
-    bucket_name = "cos-standard-7ry"
+    bucket_name = "cloud-object-storage-zg-cos-standard-275"
     
     if mode == "parsed":
         # Parsed pdf file using page range

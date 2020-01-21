@@ -3,6 +3,7 @@ import ibm_boto3
 import pandas as pd
 
 from ibm_botocore.client import Config, ClientError
+from numpy import nan
 from pdf_scraper import pdf_scraper
 from youtube_scraper import youtube_scraper
 
@@ -94,7 +95,7 @@ def run_scraper(path):
         # http.client.IncompleteRead: IncompleteRead(1108131 bytes read, 7408904 more expected)
         # Need to be fixed, check:
         # https://stackoverflow.com/questions/51226635/http-client-incompleteread-error-in-python3
-        
+
         path_to_pdf_file = pdf_scraper(
                                         cos,
                                         pdf_urls[company_i],
@@ -103,13 +104,18 @@ def run_scraper(path):
                                         mode='parsed'
                                         )
 
-        if (youtube_urls[company_i] is not None) or (youtube_urls[company_i] != ""):
+        if isinstance(youtube_urls[company_i], str):
             print("Retrieving Youtube Transcript file.")
-            path_to_youtube_transcript = youtube_scraper(
-                                                        cos,
-                                                        companies[company_i],
-                                                        youtube_urls[company_i]
-                                                        )
+            try:
+                path_to_youtube_transcript = youtube_scraper(
+                                                            cos,
+                                                            companies[company_i],
+                                                            youtube_urls[company_i]
+                                                            )
+            except Exception as e:
+                print(f"Cannot access the link{companies[company_i]}, because {e}.")
+                path_to_youtube_transcript = ""
+
         else:
             print(f"{companies[company_i]} does not have a youtube link.")
             path_to_youtube_transcript = ""
