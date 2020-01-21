@@ -123,8 +123,9 @@ def run_scraper(path):
         data_dict['company_name'].append(companies[company_i])
         data_dict['path_to_pdf_file'].append(path_to_pdf_file)
         data_dict['path_to_youtube_transcript'].append(path_to_youtube_transcript)
-    
 
+
+    # TODO: Integrate news scraper
     return data_dict
 
 if __name__ == "__main__":

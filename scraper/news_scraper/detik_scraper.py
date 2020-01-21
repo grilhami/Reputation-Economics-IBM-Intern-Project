@@ -2,6 +2,8 @@ import scrapy
 import time
 import datetime
 
+from scrapy.crawler import CrawlerProcess
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -20,7 +22,9 @@ class DetikScraper(scrapy.Spider):
     allowed_domains = ["www.detik.com"]
     start_urls = ["https://www.detik.com/"]
 
-    def __init__(self):
+    def __init__(self, keyword='', *args,**kwargs):
+        super(DetikScraper, self).__init__(*args, **kwargs)
+        self.keyword = keyword
         options = Options()
         options.headless = True
         chromedriver_path = "/mnt/c/Users/Gilang R Ilhami/Desktop/personal_projects/ibm_stuff/chromedriver.exe"
@@ -39,7 +43,7 @@ class DetikScraper(scrapy.Spider):
 
         self.driver.implicitly_wait(10)
         input_search = self.driver.find_element_by_xpath("//*[@id='search_navbar']/input[1]")
-        input_search.send_keys(KEYWORD.lower())
+        input_search.send_keys(self.keyword.lower())
         input_search.send_keys(Keys.RETURN)
 
         self.driver.implicitly_wait(10)
@@ -191,9 +195,27 @@ class DetikScraper(scrapy.Spider):
                 second_year_contetns.append(links[content_index])
             else:
                 pass
+
+            # TODO: Store urls in IBM COS
                 
         yield {
             f"{FIRST_YEAR} contents":first_year_contents,
             f"{SECOND_YEAR} contents": second_year_contetns
 
         }
+
+def detik(company_name):
+
+    process = CrawlerProcess()
+    i = 0
+    while i < 2:
+        process.crawl(DetikScraper, keyword=company_name)
+        i += 1
+    process.start()
+
+    dirname = f"assets/{company_name}/news_urls/"
+
+    filename_first_year = dirname + f"{company_name}_detik_{FIRST_YEAR}.txt"
+    filename_second_year = dirname + f"{company_name}_detik_{SECOND_YEAR}.txt"
+
+    return filename_first_year, filename_second_year

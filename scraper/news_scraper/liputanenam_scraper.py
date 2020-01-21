@@ -149,3 +149,5 @@ class LiputanEnamScraper(scrapy.Spider):
             f"{SECOND_YEAR} contents": second_year_contetns
 
         }
+
+# TODO: add function to easily integrate to main scraper

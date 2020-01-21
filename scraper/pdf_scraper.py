@@ -31,7 +31,11 @@ def pdf_scraper(cos, url, company, page_range, mode="both"):
     headers={'User-Agent':USER_AGENT} 
 
     # Fetch data from url
-    request = r.get(url, headers=headers)
+    try:
+        request = r.get(url, headers=headers)
+    except:
+        request = r.get(url, headers=headers, verify=False)
+
     web_file = request.content
     print("Data fetched.")
     
