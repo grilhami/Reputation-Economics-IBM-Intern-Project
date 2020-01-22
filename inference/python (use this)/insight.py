@@ -12,6 +12,7 @@ personality_insights = PersonalityInsightsV3(
 personality_insights.set_service_url('https://api.us-south.personality-insights.watson.cloud.ibm.com/instances/1a6f55c5-2b27-4ad1-92a3-c36b6bf9de49')
 
 # Text Output
+"""
 with open('test-case.txt', encoding = 'utf-8') as profile_txt:
     profile = personality_insights.profile(
         profile_txt.read(),
@@ -25,10 +26,10 @@ print(json.dumps(profile, indent = 2))
 with open('results.txt', 'w') as jsonsaver:
     json.dump(profile, jsonsaver, indent = 2)
 
-print("Written to file successfully!")
+print("Written to text file successfully!")
+"""
 
 # CSV Output (commented right now)
-"""
 with open('test-case.txt', encoding = 'utf-8') as profile_txt:
     response = personality_insights.profile(
         profile_txt.read(),
@@ -41,10 +42,11 @@ with open('test-case.txt', encoding = 'utf-8') as profile_txt:
 profile = response.content
 
 with open('resultsCSV.csv', 'w', newline='') as csvfile:
-    penulis = csv.writer(csvfile, delimiter=' ')
+    penulis = csv.writer(csvfile, delimiter=',')
     cr = csv.reader(profile.decode('utf-8').splitlines())
     my_list = list(cr)
     for row in my_list:
         penulis.writerow(row)
         print(row)
-"""
+
+print("Written to CSV file successfully!")
