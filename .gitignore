@@ -6,6 +6,7 @@ __pycache__/
 
 # Dependencies
 **/node_modules
+.vscode/
 
 # C extensions
 *.so
