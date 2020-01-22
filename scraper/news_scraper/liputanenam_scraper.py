@@ -204,6 +204,7 @@ def liputanenam(company_names):
 
     process = CrawlerProcess()
     for company_name in company_names:
+        company_name = company_name.replace("_"," ")
         process.crawl(LiputanEnamScraper, keyword=company_name)
 
         dirname = f"assets/{company_name}/news_urls/"

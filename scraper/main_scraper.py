@@ -4,6 +4,7 @@ import pandas as pd
 
 from ibm_botocore.client import Config, ClientError
 from numpy import nan
+from datetime import datetime
 
 from pdf_scraper import pdf_scraper
 from youtube_scraper import youtube_scraper
@@ -85,7 +86,9 @@ def run_scraper(path):
     data_dict = {
         'company_name': [],
         'path_to_pdf_file':[],
-        'path_to_youtube_transcript': []
+        'path_to_youtube_transcript': [],
+        'path_to_news_urls': [],
+        'stored_date': []
     }
 
 
@@ -122,13 +125,19 @@ def run_scraper(path):
         else:
             print(f"{companies[company_i]} does not have a youtube link.")
             path_to_youtube_transcript = ""
-        
+
+        liputanenam_path = liputanenam(companies[company_i])
+        detik_path = detik(companies[company_i])
+        urls_path = liputanenam_path[1] + detik_path[1]
+
+        stored_date = datetime.now()
+
         data_dict['company_name'].append(companies[company_i])
         data_dict['path_to_pdf_file'].append(path_to_pdf_file)
         data_dict['path_to_youtube_transcript'].append(path_to_youtube_transcript)
-
-
-    # TODO: Integrate news scraper
+        data_dict['path_to_news_urls'].append(urls_path)
+        deta_dict['stored_date'].append(stored_date)
+        
     return data_dict
 
 if __name__ == "__main__":
