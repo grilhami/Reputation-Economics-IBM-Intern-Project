@@ -1,6 +1,9 @@
 import scrapy
 import time
 import datetime
+import ibm_boto3
+
+from ibm_botocore.client import Config, ClientError
 
 from scrapy.crawler import CrawlerProcess
 
@@ -11,7 +14,23 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
-from utils import retrieve_date_year
+from ..utils import retrieve_date_year
+
+from ..settings import (
+    COS_ENDPOINT,
+    COS_API_KEY_ID,
+    COS_AUTH_ENDPOINT,
+    COS_RESOURCE_CRN,
+    BUCKET_NAME
+)
+
+from ..settings import (
+    COS_ENDPOINT,
+    COS_API_KEY_ID,
+    COS_AUTH_ENDPOINT,
+    COS_RESOURCE_CRN,
+    BUCKET_NAME
+)
 
 FIRST_YEAR = 2017
 SECOND_YEAR = 2018
@@ -28,12 +47,12 @@ class DetikScraper(scrapy.Spider):
         options = Options()
         options.headless = True
         chromedriver_path = "/mnt/c/Users/Gilang R Ilhami/Desktop/personal_projects/ibm_stuff/chromedriver.exe"
-        self.driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
+        # self.driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
 
         # Commend code above, and 
         # uncomment code below
         # to remove headless scraping.
-        # self.driver = webdriver.Chrome(executable_path=chromedriver_path)
+        self.driver = webdriver.Chrome(executable_path=chromedriver_path)
 
     def parse(self, response):
 
@@ -153,7 +172,7 @@ class DetikScraper(scrapy.Spider):
         links = all_links.copy()
 
         first_year_contents = []
-        second_year_contetns = []
+        second_year_contents = []
 
         all_index = set(map(links.index, links))
 
@@ -192,30 +211,58 @@ class DetikScraper(scrapy.Spider):
             if content_date >= FIRST_YEAR and content_date < SECOND_YEAR:
                 first_year_contents.append(links[content_index])
             elif content_date >= SECOND_YEAR and content_date < current_year:
-                second_year_contetns.append(links[content_index])
+                second_year_contents.append(links[content_index])
             else:
                 pass
 
-            # TODO: Store urls in IBM COS
+        self.driver.close()
+
+        dirname = f"assets/{self.keyword}/news_urls/"
+        filename_first_year = dirname + f"{self.keyword}_liputanenam_{FIRST_YEAR}.txt"
+        filename_second_year = dirname + f"{self.keyword}_liputanenam_{SECOND_YEAR}.txt"
+
+        if not first_year_contents:
+            first_year_urls = "\n".join(first_year_contents)
+        else:
+            first_year_urls = ""
+
+        if not second_year_contents:
+            second_year_urls = "\n".join(second_year_contents)
+        else:
+            second_year_urls = ""
+        
+        cos.Object(BUCKET_NAME, filename_first_year).put(Body=first_year_urls)
+        cos.Object(BUCKET_NAME, filename_second_year).put(Body=second_year_urls)
                 
         yield {
             f"{FIRST_YEAR} contents":first_year_contents,
-            f"{SECOND_YEAR} contents": second_year_contetns
+            f"{SECOND_YEAR} contents": second_year_contents
 
         }
 
-def detik(company_name):
+def detik(company_names):
+
+    if not isinstance(company_names, list):
+        raise ValueError(f"company_names must be list, found {type(company_names)} instead.")
+
+    first_year_paths = [] 
+    second_year_paths = []
 
     process = CrawlerProcess()
-    i = 0
-    while i < 2:
+    for company_name in company_names:
+        company_name = company_name.replace("_"," ")
         process.crawl(DetikScraper, keyword=company_name)
-        i += 1
+
+        dirname = f"assets/{company_name}/news_urls/"
+
+        filename_first_year = dirname + f"{company_name}_detik_{FIRST_YEAR}.txt"
+        first_year_paths.append(filename_first_year)
+
+        filename_second_year = dirname + f"{company_name}_detik_{SECOND_YEAR}.txt"
+        second_year_paths.append(filename_second_year)
+
     process.start()
 
     dirname = f"assets/{company_name}/news_urls/"
 
-    filename_first_year = dirname + f"{company_name}_detik_{FIRST_YEAR}.txt"
-    filename_second_year = dirname + f"{company_name}_detik_{SECOND_YEAR}.txt"
-
-    return filename_first_year, filename_second_year
+    return first_year_paths, second_year_paths

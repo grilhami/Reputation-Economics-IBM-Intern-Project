@@ -1,6 +1,11 @@
 import scrapy
 import time
 import datetime
+import ibm_boto3
+
+from ibm_botocore.client import Config, ClientError
+
+from scrapy.crawler import CrawlerProcess
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -9,7 +14,24 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
-from utils import retrieve_date_year
+from ..utils import retrieve_date_year
+
+from ..settings import (
+    COS_ENDPOINT,
+    COS_API_KEY_ID,
+    COS_AUTH_ENDPOINT,
+    COS_RESOURCE_CRN,
+    BUCKET_NAME
+)
+
+cos = ibm_boto3.resource("s3",
+    ibm_api_key_id=COS_API_KEY_ID,
+    ibm_auth_endpoint=COS_AUTH_ENDPOINT,
+    config=Config(signature_version="oauth"),
+    endpoint_url=COS_ENDPOINT,
+    ibm_service_instance_id=COS_RESOURCE_CRN,
+            
+)
 
 FIRST_YEAR = 2017
 SECOND_YEAR = 2018
@@ -20,16 +42,18 @@ class LiputanEnamScraper(scrapy.Spider):
     allowed_domains = ["www.liputan6.com"]
     start_urls = ["https://www.liputan6.com/"]
 
-    def __init__(self):
+    def __init__(self, keyword='', *args,**kwargs):
+        super(LiputanEnamScraper, self).__init__(*args, **kwargs)
+        self.keyword = keyword
         options = Options()
         options.headless = True
         chromedriver_path = "/mnt/c/Users/Gilang R Ilhami/Desktop/personal_projects/ibm_stuff/chromedriver.exe"
-        # self.driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
+        self.driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
 
         # Commend code above, and 
         # uncomment code below
         # to remove headless scraping.
-        self.driver = webdriver.Chrome(executable_path=chromedriver_path)
+        # self.driver = webdriver.Chrome(executable_path=chromedriver_path)
 
     def parse(self, response):
         url = response.url
@@ -38,7 +62,7 @@ class LiputanEnamScraper(scrapy.Spider):
         
         self.driver.implicitly_wait(10)
         input_search = self.driver.find_element_by_xpath("//*[@id='q']")
-        input_search.send_keys(KEYWORD.lower())
+        input_search.send_keys(self.keyword.lower())
         input_search.send_keys(Keys.RETURN)
         
         self.driver.implicitly_wait(10)
@@ -110,7 +134,7 @@ class LiputanEnamScraper(scrapy.Spider):
         link_list = [link.get_attribute("href") for link in link_list if link_not_none]
             
         first_year_contents = []
-        second_year_contetns = []
+        second_year_contents = []
         
         all_index = set(map(link_list.index, link_list))
         
@@ -140,14 +164,58 @@ class LiputanEnamScraper(scrapy.Spider):
             if content_date >= FIRST_YEAR and content_date < SECOND_YEAR:
                 first_year_contents.append(link_list[content_index])
             elif content_date >= SECOND_YEAR and content_date < current_year:
-                second_year_contetns.append(link_list[content_index])
+                second_year_contents.append(link_list[content_index])
             else:
                 pass
+
+        self.driver.close()
+
+        dirname = f"assets/{self.keyword}/news_urls/"
+        filename_first_year = dirname + f"{self.keyword}_liputanenam_{FIRST_YEAR}.txt"
+        filename_second_year = dirname + f"{self.keyword}_liputanenam_{SECOND_YEAR}.txt"
+
+        if not first_year_contents:
+            first_year_urls = "\n".join(first_year_contents)
+        else:
+            first_year_urls = ""
+
+        if not second_year_contents:
+            second_year_urls = "\n".join(second_year_contents)
+        else:
+            second_year_urls = ""
+        
+        cos.Object(BUCKET_NAME, filename_first_year).put(Body=first_year_urls)
+        cos.Object(BUCKET_NAME, filename_second_year).put(Body=second_year_urls)
+
                 
         yield {
             f"{FIRST_YEAR} contents":first_year_contents,
-            f"{SECOND_YEAR} contents": second_year_contetns
+            f"{SECOND_YEAR} contents": second_year_contents
 
         }
 
-# TODO: add function to easily integrate to main scraper
+def liputanenam(company_names):
+
+    if not isinstance(company_names, list):
+        raise ValueError(f"company_names must be list, found {type(company_names)} instead.")
+
+    first_year_paths = [] 
+    second_year_paths = []
+
+    process = CrawlerProcess()
+    for company_name in company_names:
+        process.crawl(LiputanEnamScraper, keyword=company_name)
+
+        dirname = f"assets/{company_name}/news_urls/"
+
+        filename_first_year = dirname + f"{company_name}_liputanenam_{FIRST_YEAR}.txt"
+        first_year_paths.append(filename_first_year)
+
+        filename_second_year = dirname + f"{company_name}_liputanenam_{SECOND_YEAR}.txt"
+        second_year_paths.append(filename_second_year)
+
+    process.start()
+
+    dirname = f"assets/{company_name}/news_urls/"
+
+    return first_year_paths, second_year_paths

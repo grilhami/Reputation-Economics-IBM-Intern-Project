@@ -4,8 +4,11 @@ import pandas as pd
 
 from ibm_botocore.client import Config, ClientError
 from numpy import nan
+
 from pdf_scraper import pdf_scraper
 from youtube_scraper import youtube_scraper
+from news_scraper.detik_scraper import detik
+from news_scraper.liputanenam_scraper import liputanenam
 
 from settings import (
     COS_ENDPOINT,
