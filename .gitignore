@@ -4,9 +4,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Dependencies
+# Dependencies added by programmer.
 **/node_modules
 .vscode/
+.documents/
 
 # C extensions
 *.so
