@@ -14,9 +14,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
-from ..utils import retrieve_date_year
+from utils import retrieve_date_year
 
-from ..settings import (
+from settings import (
     COS_ENDPOINT,
     COS_API_KEY_ID,
     COS_AUTH_ENDPOINT,

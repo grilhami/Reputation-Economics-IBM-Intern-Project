@@ -14,17 +14,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
-from ..utils import retrieve_date_year
+from utils import retrieve_date_year
 
-from ..settings import (
-    COS_ENDPOINT,
-    COS_API_KEY_ID,
-    COS_AUTH_ENDPOINT,
-    COS_RESOURCE_CRN,
-    BUCKET_NAME
-)
-
-from ..settings import (
+from settings import (
     COS_ENDPOINT,
     COS_API_KEY_ID,
     COS_AUTH_ENDPOINT,
@@ -35,6 +27,15 @@ from ..settings import (
 FIRST_YEAR = 2017
 SECOND_YEAR = 2018
 KEYWORD = "tenaga nuklir indonesia"
+
+cos = ibm_boto3.resource("s3",
+    ibm_api_key_id=COS_API_KEY_ID,
+    ibm_auth_endpoint=COS_AUTH_ENDPOINT,
+    config=Config(signature_version="oauth"),
+    endpoint_url=COS_ENDPOINT,
+    ibm_service_instance_id=COS_RESOURCE_CRN,
+            
+)
 
 class DetikScraper(scrapy.Spider):
     name = "detik_scraper"

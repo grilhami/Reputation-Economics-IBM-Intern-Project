@@ -75,7 +75,7 @@ def run_scraper(path):
     if "company_name" not in company_df.columns:
         raise KeyError("column name 'comapny_name' is not found in excel file.")
     else:
-        companies = company_df['company_name'].values.tolist()
+        companies = company_df['company_name'].values.tolist()[55:56]
 
     #import ipdb; ipdb.set_trace()
     pdf_urls = company_df['link'].values.tolist()
@@ -86,15 +86,18 @@ def run_scraper(path):
     data_dict = {
         'company_name': [],
         'path_to_pdf_file':[],
+        'pdf_stored_date': [],
         'path_to_youtube_transcript': [],
-        'path_to_news_urls': [],
-        'stored_date': []
+        'youtube_stored_date':[],
+        'news_urls_stored_date': []
     }
 
 
     for company_i in range(len(companies)):
         print(f"Fetching data on {companies[company_i]}...\n\n")
         print("Retrieving PDF file.")
+
+        data_dict['company_name'].append(companies[company_i])
 
         # TODO: pdf_scraper result in the
         # following error:
@@ -109,6 +112,9 @@ def run_scraper(path):
                                         page_ranges[company_i],
                                         mode='parsed'
                                         )
+        pdf_stored_date = datetime.now().strftime("%Y-%m-%d")
+        data_dict['path_to_pdf_file'].append(path_to_pdf_file)
+        data_dict['pdf_stored_date'].append(pdf_stored_date)
 
         if isinstance(youtube_urls[company_i], str):
             print("Retrieving Youtube Transcript file.")
@@ -126,24 +132,35 @@ def run_scraper(path):
             print(f"{companies[company_i]} does not have a youtube link.")
             path_to_youtube_transcript = ""
 
-        liputanenam_path = liputanenam(companies[company_i])
-        detik_path = detik(companies[company_i])
-        urls_path = liputanenam_path[1] + detik_path[1]
+        youtube_stored_date = datetime.now().strftime("%Y-%m-%d")
 
-        stored_date = datetime.now()
-
-        data_dict['company_name'].append(companies[company_i])
-        data_dict['path_to_pdf_file'].append(path_to_pdf_file)
         data_dict['path_to_youtube_transcript'].append(path_to_youtube_transcript)
-        data_dict['path_to_news_urls'].append(urls_path)
-        deta_dict['stored_date'].append(stored_date)
+        data_dict['youtube_stored_date'].append(youtube_stored_date)
+        
+
+    # liputanenam_paths = liputanenam(companies)
+    detik_paths = detik(companies)
+
+    for company_i in range(len(companies)):
+        # liputanenam_path = liputanenam_paths[company_i]
+        detik_path = detik_paths[company_i]
+
+        # urls_path = liputanenam_path + "," + detik_path
+        data_dict['path_to_news_urls'] = detik_path
+
+    urls_stored_date = datetime.now()
+
+    data_dict['news_urls_stored_date'].append(urls_stored_date.strftime("%Y-%m-%d"))
         
     return data_dict
 
 if __name__ == "__main__":
 
     data = run_scraper(PATH)
+    print(data)
 
     df = pd.DataFrame.from_dict(data)
+
+    df.to_csv("../sample_files/sample.csv", index=False)
 
     print(df)
