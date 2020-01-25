@@ -11,6 +11,11 @@ from youtube_scraper import youtube_scraper
 from news_scraper.detik_scraper import detik
 from news_scraper.liputanenam_scraper import liputanenam
 
+
+# Need to run:
+# export PYTHONPATH=/path/to/orm:$PYTHONPATH
+from orm import insert_to_db
+
 from settings import (
     COS_ENDPOINT,
     COS_API_KEY_ID,
@@ -23,6 +28,9 @@ from utils import (
     get_range,
     datetime_to_str
 )
+
+import sys
+sys.path.append("dirname(__file__)")
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--path_to_excel", required=True, help="Path to the excel file that contains the company list.")
@@ -75,9 +83,12 @@ def run_scraper(path):
     if "company_name" not in company_df.columns:
         raise KeyError("column name 'comapny_name' is not found in excel file.")
     else:
-        companies = company_df['company_name'].values.tolist()[55:56]
-
+        """
+            SCRAPE COMPANY DATA USING INDEX
+        """
+        companies = company_df['company_name'].values.tolist()[10:16]
     #import ipdb; ipdb.set_trace()
+    cxos = company_df['cxo'].values.tolist()
     pdf_urls = company_df['link'].values.tolist()
     youtube_urls = company_df['youtube_link'].values.tolist()
 
@@ -85,11 +96,13 @@ def run_scraper(path):
 
     data_dict = {
         'company_name': [],
+        'cxo_name': [],
         'path_to_pdf_file':[],
         'pdf_stored_date': [],
         'path_to_youtube_transcript': [],
         'youtube_stored_date':[],
-        'news_urls_stored_date': []
+        'news_urls_stored_date': [],
+        'path_to_news_urls': []
     }
 
 
@@ -98,6 +111,8 @@ def run_scraper(path):
         print("Retrieving PDF file.")
 
         data_dict['company_name'].append(companies[company_i])
+        data_dict['cxo_name'].append(cxos[company_i])
+
 
         # TODO: pdf_scraper result in the
         # following error:
@@ -140,17 +155,19 @@ def run_scraper(path):
 
     # liputanenam_paths = liputanenam(companies)
     detik_paths = detik(companies)
+    print("DETIK PATHS:")
+    print(detik_paths, end="\n\n")
 
     for company_i in range(len(companies)):
         # liputanenam_path = liputanenam_paths[company_i]
         detik_path = detik_paths[company_i]
 
         # urls_path = liputanenam_path + "," + detik_path
-        data_dict['path_to_news_urls'] = detik_path
+        data_dict['path_to_news_urls'].append(detik_path)
 
-    urls_stored_date = datetime.now()
+        urls_stored_date = datetime.now()
 
-    data_dict['news_urls_stored_date'].append(urls_stored_date.strftime("%Y-%m-%d"))
+        data_dict['news_urls_stored_date'].append(urls_stored_date.strftime("%Y-%m-%d"))
         
     return data_dict
 
@@ -160,6 +177,19 @@ if __name__ == "__main__":
     print(data)
 
     df = pd.DataFrame.from_dict(data)
+
+    for i in range(len(df)):
+        input_data = df.iloc[i].values.tolist()
+        insert_to_db(
+            company_name=input_data[0],
+            cxo_name=input_data[1],
+            path_to_parsed_pdf=input_data[2],
+            path_to_youtube_transcript=input_data[4],
+            links=input_data[7],
+            pdf_stored_date=input_data[3],
+            youtube_stored_date=input_data[5],
+            news_urls_stored_date=input_data[6]
+        )
 
     df.to_csv("../sample_files/sample.csv", index=False)
 

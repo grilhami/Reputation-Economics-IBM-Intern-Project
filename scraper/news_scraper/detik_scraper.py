@@ -48,12 +48,12 @@ class DetikScraper(scrapy.Spider):
         options = Options()
         options.headless = True
         chromedriver_path = "/mnt/c/Users/Gilang R Ilhami/Desktop/personal_projects/ibm_stuff/chromedriver.exe"
-        # self.driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
+        self.driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
 
         # Commend code above, and 
         # uncomment code below
         # to remove headless scraping.
-        self.driver = webdriver.Chrome(executable_path=chromedriver_path)
+        # self.driver = webdriver.Chrome(executable_path=chromedriver_path)
 
     def parse(self, response):
 
@@ -102,14 +102,14 @@ class DetikScraper(scrapy.Spider):
             last_idx -= 1
 
         
-        if latest_news_year < FIRST_YEAR:
+        if latest_news_year < SECOND_YEAR:
             all_links = link_list
         else:
             all_links = []
 
         # While the latest news larger than
         # the first year, retrieve the url.
-        while latest_news_year >= FIRST_YEAR:
+        while latest_news_year >= SECOND_YEAR:
 
             print("="*20)
             print("Retrieving all the news url...")
@@ -172,7 +172,7 @@ class DetikScraper(scrapy.Spider):
 
         links = all_links.copy()
 
-        first_year_contents = []
+        # first_year_contents = []
         second_year_contents = []
 
         all_index = set(map(links.index, links))
@@ -209,34 +209,44 @@ class DetikScraper(scrapy.Spider):
             print(content_date)
 
             # Seperating First Year and Second Year contents
-            if content_date >= FIRST_YEAR and content_date < SECOND_YEAR:
-                first_year_contents.append(links[content_index])
-            elif content_date >= SECOND_YEAR and content_date < current_year:
+            # if content_date >= FIRST_YEAR and content_date < SECOND_YEAR:
+            #     first_year_contents.append(links[content_index])
+            # elif content_date >= SECOND_YEAR and content_date < current_year:
+            #     second_year_contents.append(links[content_index])
+            # else:
+            #     pass
+
+            if content_date == SECOND_YEAR:
                 second_year_contents.append(links[content_index])
-            else:
-                pass
+            else: pass
 
         self.driver.close()
 
-        dirname = f"assets/{self.keyword}/news_urls/"
-        filename_first_year = dirname + f"{self.keyword}_liputanenam_{FIRST_YEAR}.txt"
-        filename_second_year = dirname + f"{self.keyword}_liputanenam_{SECOND_YEAR}.txt"
+        clean_keyword = self.keyword.replace(" ","_")
 
-        if not first_year_contents:
-            first_year_urls = "\n".join(first_year_contents)
-        else:
-            first_year_urls = ""
+        dirname = f"assets/{clean_keyword}/news_urls/"
+        # filename_first_year = dirname + f"{self.keyword}_liputanenam_{FIRST_YEAR}.txt"
+        filename_second_year = dirname + f"{clean_keyword}_detik_{SECOND_YEAR}.txt"
+
+        # if not first_year_contents:
+        #     first_year_urls = "\n".join(first_year_contents)
+        # else:
+        #     first_year_urls = ""
 
         if not second_year_contents:
-            second_year_urls = "\n".join(second_year_contents)
-        else:
             second_year_urls = ""
+        else:
+            second_year_urls = "\n".join(second_year_contents)
+        print("*"*40)
+        print("ALL THE CONTENTS")
+        print(second_year_contents)
+        print("*"*40)
         
-        cos.Object(BUCKET_NAME, filename_first_year).put(Body=first_year_urls)
+        # cos.Object(BUCKET_NAME, filename_first_year).put(Body=first_year_urls)
         cos.Object(BUCKET_NAME, filename_second_year).put(Body=second_year_urls)
                 
         yield {
-            f"{FIRST_YEAR} contents":first_year_contents,
+            # f"{FIRST_YEAR} contents":first_year_contents,
             f"{SECOND_YEAR} contents": second_year_contents
 
         }
@@ -251,13 +261,20 @@ def detik(company_names):
 
     process = CrawlerProcess()
     for company_name in company_names:
+
         company_name = company_name.replace("_"," ")
+
+        print("="*30)
+        print(f"CURRENTLY CRAWLING {company_name.upper()}")
+        print("="*30)
+
         process.crawl(DetikScraper, keyword=company_name)
+        company_name = company_name.replace(" ","_")
 
         dirname = f"assets/{company_name}/news_urls/"
 
-        filename_first_year = dirname + f"{company_name}_detik_{FIRST_YEAR}.txt"
-        first_year_paths.append(filename_first_year)
+        # filename_first_year = dirname + f"{company_name}_detik_{FIRST_YEAR}.txt"
+        # first_year_paths.append(filename_first_year)
 
         filename_second_year = dirname + f"{company_name}_detik_{SECOND_YEAR}.txt"
         second_year_paths.append(filename_second_year)
@@ -266,4 +283,4 @@ def detik(company_names):
 
     dirname = f"assets/{company_name}/news_urls/"
 
-    return first_year_paths, second_year_paths
+    return second_year_paths
