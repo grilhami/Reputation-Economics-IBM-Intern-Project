@@ -1,9 +1,8 @@
-from ibm_watson import PersonalityInsightsV3, NaturalLanguageUnderstandingV1
+from ibm_watson import PersonalityInsightsV3, NaturalLanguageUnderstandingV1, DiscoveryV1
 from ibm_watson.natural_language_understanding_v1 import Features, EntitiesOptions, KeywordsOptions
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from os.path import join, dirname
-import json
-import csv
+import json, csv, time
 
 # Personality Insight Authenticator
 authenticator = IAMAuthenticator('ECmiZK1SBaPna4NRiSjIwUkwZAJRAOf3vrkuhCfpZp88')
@@ -21,7 +20,16 @@ NLUService = NaturalLanguageUnderstandingV1(
 )
 NLUService.set_service_url('https://api.us-south.natural-language-understanding.watson.cloud.ibm.com/instances/77166e19-c4c0-450f-a933-a9cfb4f058a6')
 
+# Discovery Authenticator
+authenticator = IAMAuthenticator('sT2M6WUORELnxZq6vXj7n53kwQbpf3Zj3G8vXlvQNsEE')
+DiscoveryService = DiscoveryV1(
+    version='2019-11-22',
+    authenticator=authenticator
+)
+DiscoveryService.set_service_url('https://api.us-south.discovery.watson.cloud.ibm.com/instances/3e77ba4f-60f7-40cc-91ff-46d72fba9f29')
+
 # Text Output
+"""
 def outputTxt(personality_insights, NLUService):
     with open('test-case.txt', encoding = 'utf-8') as profile_txt:
         profile = personality_insights.profile(
@@ -37,7 +45,7 @@ def outputTxt(personality_insights, NLUService):
         json.dump(profile, jsonsaver, indent = 2)
 
     print("Personality Insights's JSON written to text file successfully!")
-
+    
     with open('test-case.txt', encoding='utf-8') as profile_txt:
         response = NLUService.analyze(
             text = profile_txt.read(),
@@ -52,34 +60,96 @@ def outputTxt(personality_insights, NLUService):
         json.dump(response, jsonsaver, indent = 2)
 
     print("NLU's JSON written to text file successfully!")
+"""
 
-# CSV Output (currently no NLU)
-def outputCSV(personality_insights, NLUService):
+# CSV Output (no NLU)
+def outputCSV(personality_insights, NLUService, company_name):
     with open('test-case.txt', encoding = 'utf-8') as profile_txt:
         response = personality_insights.profile(
             profile_txt.read(),
             accept="text/csv",
             content_type='text/plain;charset=utf-8',
             consumption_preferences=True,
-            csv_headers=True,
+            csv_headers=False,
             raw_scores=True).get_result()
-
     profile = response.content
 
-    with open('resultsCSV.csv', 'w', newline='') as csvfile:
+    with open('resultsCSV.csv', 'a', newline='') as csvfile:
         penulis = csv.writer(csvfile, delimiter=',')
         cr = csv.reader(profile.decode('utf-8').splitlines())
         my_list = list(cr)
         for row in my_list:
+            row.insert(0, company_name)
             penulis.writerow(row)
             print(row)
 
     print("Written to CSV file successfully!")
 
+# Inference / Analysis with Discovery
+def discoveryAnalysis(DiscoveryService):
+    # Add new env.
+    response = DiscoveryService.create_environment(
+        name="My Testing Environment",
+        description="Latian"
+    ).get_result()
+    print(json.dumps(response, indent=2))
+
+    hasil = json.dumps(response, indent = 2)
+    kamus = json.loads(hasil)
+    
+    environmentID = kamus['environment_id']
+    print(environmentID)
+
+    # Add new collection.
+    new_collection = DiscoveryService.create_collection(
+        environment_id = environmentID,
+        name = 'Hello World',
+        description = 'Penampung sementara untuk analisa.',
+        language = 'en'
+    ).get_result()
+    print(json.dumps(new_collection, indent=2))
+
+    hasil = json.dumps(new_collection, indent = 2)
+    kamus = json.loads(hasil)
+
+    collectionID = kamus['collection_id']
+    print(collectionID)
+
+    # Add 3 new documents.
+    with open('discovery-test-case-1.html', 'r', encoding='utf-8') as html:
+        add_doc = DiscoveryService.add_document(environmentID, collectionID, file = html).get_result()
+    print(json.dumps(add_doc, indent=2))
+
+    with open('discovery-test-case-2.html', 'r', encoding='utf-8') as html:
+        add_doc = DiscoveryService.add_document(environmentID, collectionID, file = html).get_result()
+    print(json.dumps(add_doc, indent=2))
+
+    with open('discovery-test-case-3.html', 'r', encoding='utf-8') as html:
+        add_doc = DiscoveryService.add_document(environmentID, collectionID, file = html).get_result()
+    print(json.dumps(add_doc, indent=2))
+
+    # Wait for the documents to be processed.
+    time.sleep(20)
+    print("Documents maybe already processed? Let's go query.")
+
+    # Query
+    query_res = DiscoveryService.query(environmentID, collectionID).get_result()
+    print(json.dumps(query_res, indent=2))
+
+    # Remove collection.
+    delete_collection = DiscoveryService.delete_collection(environmentID, collectionID).get_result()
+    print(json.dumps(delete_collection, indent=2))
+
+    # Delete env.
+    del_env = DiscoveryService.delete_environment(environmentID).get_result()
+    print(json.dumps(del_env, indent=2))
+
 # Main Function
 def main():
-    outputTxt(personality_insights, NLUService)
-    # outputCSV(personality_insights, NLUService)
+    # Obsolete: outputTxt(personality_insights, NLUService)  
+    # Run this by changing the parameters.
+    # outputCSV(personality_insights, NLUService, 'Gudang Garam Tbk.')
+    discoveryAnalysis(DiscoveryService)
 
 if __name__ == "__main__":
     main()
