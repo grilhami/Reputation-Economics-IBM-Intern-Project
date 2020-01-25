@@ -100,9 +100,32 @@ def discoveryAnalysis(DiscoveryService):
     environmentID = kamus['environment_id']
     print(environmentID)
 
+    # Add new config for keyword extraction
+    with open('config2.json', 'r') as config_data:
+        data = json.load(config_data)
+        new_config = DiscoveryService.create_configuration(
+            environmentID,
+            data['name'],
+            description=data['description'],
+            conversions=data['conversions'],
+            enrichments=data['enrichments'],
+            normalizations=data['normalizations']
+        ).get_result()
+
+    print(json.dumps(new_config, indent=2))
+
+    # Get configuration id.
+    configs = DiscoveryService.list_configurations(environmentID).get_result()
+    print(json.dumps(configs, indent=2))
+    hasil = json.dumps(configs, indent=2)
+    kamus = json.loads(hasil)
+    configurationID = kamus['configurations'][1]['configuration_id']
+    
+    # Set the configuration for keyword extraction.
     # Add new collection.
     new_collection = DiscoveryService.create_collection(
         environment_id = environmentID,
+        configuration_id = configurationID,
         name = 'Hello World',
         description = 'Penampung sementara untuk analisa.',
         language = 'en'
@@ -111,9 +134,7 @@ def discoveryAnalysis(DiscoveryService):
 
     hasil = json.dumps(new_collection, indent = 2)
     kamus = json.loads(hasil)
-
     collectionID = kamus['collection_id']
-    print(collectionID)
 
     # Add 3 new documents.
     with open('discovery-test-case-1.html', 'r', encoding='utf-8') as html:
@@ -135,6 +156,34 @@ def discoveryAnalysis(DiscoveryService):
     # Query
     query_res = DiscoveryService.query(environmentID, collectionID).get_result()
     print(json.dumps(query_res, indent=2))
+    hasil = json.dumps(query_res, indent=2)
+    kamus = json.loads(hasil)
+
+    # Get Sentiment
+    numberofResults = kamus['matching_results']
+    tempBarisStorage = []
+    i = 0
+
+    while i < numberofResults:
+        tempBarisStorage.append(kamus['results'][i]['enriched_text']['sentiment']['document']['score'])
+        print(tempBarisStorage[i])
+        i += 1
+
+    i = 0
+    baris = 0
+    # Count the average values of the sentiment.
+    while i < numberofResults:
+        baris = tempBarisStorage[i] + baris
+        i += 1
+
+    baris = baris / numberofResults
+
+    with open('resultsDiscovery.csv', 'a', newline='\n') as csvfile:
+        temp = []
+        temp.append(baris)
+
+        tulisCSV = csv.writer(csvfile, delimiter=',')
+        tulisCSV.writerow(temp)
 
     # Remove collection.
     delete_collection = DiscoveryService.delete_collection(environmentID, collectionID).get_result()

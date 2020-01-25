@@ -1,0 +1,144 @@
+{  
+  "configuration_id": "84ff950d-8739-4b55-8d03-e9d60e289585",
+  "name": "Ini Konfigurasi Untuk Keyword",
+  "created": "2020-01-25T03:29:14.352Z",
+  "updated": "2020-01-25T03:29:14.352Z",
+  "description": "To get data from keywords and sentiments.",
+  "conversions": {
+    "html": {
+      "exclude_content": {
+        "xpaths": []
+      },
+      "exclude_tag_attributes": [
+        "EVENT_ACTIONS"
+      ],
+      "exclude_tags_completely": [
+        "script",
+        "sup"
+      ],
+      "exclude_tags_keep_content": [
+        "font",
+        "em",
+        "span"
+      ],
+      "keep_content": {
+        "xpaths": []
+      }
+    },
+    "json_normalizations": [],
+    "pdf": {
+      "heading": {
+        "fonts": [
+          {
+            "level": 1,
+            "max_size": 80,
+            "min_size": 24
+          },
+          {
+            "bold": false,
+            "italic": false,
+            "level": 2,
+            "max_size": 24,
+            "min_size": 18
+          },
+          {
+            "bold": true,
+            "level": 2,
+            "max_size": 24,
+            "min_size": 18
+          },
+          {
+            "bold": false,
+            "italic": false,
+            "level": 3,
+            "max_size": 18,
+            "min_size": 13
+          },
+          {
+            "bold": true,
+            "level": 3,
+            "max_size": 18,
+            "min_size": 13
+          },
+          {
+            "bold": false,
+            "italic": false,
+            "level": 4,
+            "max_size": 13,
+            "min_size": 11
+          }
+        ]
+      }
+    },
+    "word": {
+      "heading": {
+        "fonts": [
+          {
+            "bold": false,
+            "italic": false,
+            "level": 1,
+            "min_size": 24
+          },
+          {
+            "bold": true,
+            "italic": false,
+            "level": 2,
+            "max_size": 23,
+            "min_size": 18
+          },
+          {
+            "bold": false,
+            "italic": false,
+            "level": 3,
+            "max_size": 17,
+            "min_size": 14
+          },
+          {
+            "bold": true,
+            "italic": false,
+            "level": 4,
+            "max_size": 13,
+            "min_size": 13
+          }
+        ],
+        "styles": [
+          {
+            "level": 1,
+            "names": [
+              "pullout heading",
+              "pulloutheading",
+              "header"
+            ]
+          },
+          {
+            "level": 2,
+            "names": [
+              "subtitle"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "enrichments": [
+    {
+      "destination_field": "enriched_text",
+      "enrichment": "natural_language_understanding",
+      "options": {
+        "features": {
+          "categories": {},
+          "keywords": {
+            "sentiment": true,
+            "emotion": false,
+            "limit": 10
+          },
+          "sentiment": {
+            "document": true
+          }
+        }
+      },
+      "source_field": "text"
+    }
+  ],
+  "normalizations": []
+}
