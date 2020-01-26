@@ -86,13 +86,16 @@ def run_scraper(path):
         """
             SCRAPE COMPANY DATA USING INDEX
         """
-        companies = company_df['company_name'].values.tolist()[10:16]
+        # Changed value here
+        company_idx = (17, 19)
+        companies = company_df['company_name'].values.tolist()[company_idx[0]:company_idx[1]]
     #import ipdb; ipdb.set_trace()
-    cxos = company_df['cxo'].values.tolist()
-    pdf_urls = company_df['link'].values.tolist()
-    youtube_urls = company_df['youtube_link'].values.tolist()
+    cxos = company_df['cxo'].values.tolist()[company_idx[0]:company_idx[1]]
+    #import ipdb; ipdb.set_trace()
+    pdf_urls = company_df['link'].values.tolist()[company_idx[0]:company_idx[1]]
+    youtube_urls = company_df['youtube_link'].values.tolist()[company_idx[0]:company_idx[1]]
 
-    page_ranges = list(map(get_range, df['page'].values.tolist()))
+    page_ranges = list(map(get_range, df['page'].values.tolist()))[company_idx[0]:company_idx[1]]
 
     data_dict = {
         'company_name': [],
