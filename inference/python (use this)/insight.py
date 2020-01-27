@@ -86,7 +86,7 @@ def outputCSV(personality_insights, NLUService, company_name):
     print("Written to CSV file successfully!")
 
 # Inference / Analysis with Discovery
-def discoveryAnalysis(DiscoveryService):
+def discoveryAnalysis(DiscoveryService, company_name):
     # Add new env.
     response = DiscoveryService.create_environment(
         name="My Testing Environment",
@@ -101,7 +101,7 @@ def discoveryAnalysis(DiscoveryService):
     print(environmentID)
 
     # Add new config for keyword extraction
-    with open('config2.json', 'r') as config_data:
+    with open('config.json', 'r') as config_data:
         data = json.load(config_data)
         new_config = DiscoveryService.create_configuration(
             environmentID,
@@ -181,6 +181,7 @@ def discoveryAnalysis(DiscoveryService):
     with open('resultsDiscovery.csv', 'a', newline='\n') as csvfile:
         temp = []
         temp.append(baris)
+        temp.insert(0, company_name)
 
         tulisCSV = csv.writer(csvfile, delimiter=',')
         tulisCSV.writerow(temp)
@@ -198,7 +199,7 @@ def main():
     # Obsolete: outputTxt(personality_insights, NLUService)  
     # Run this by changing the parameters.
     # outputCSV(personality_insights, NLUService, 'Gudang Garam Tbk.')
-    discoveryAnalysis(DiscoveryService)
+    discoveryAnalysis(DiscoveryService, 'Gudang Garam Tbk.')
 
 if __name__ == "__main__":
     main()
