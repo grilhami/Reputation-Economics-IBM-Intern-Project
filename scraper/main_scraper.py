@@ -87,7 +87,7 @@ def run_scraper(path):
             SCRAPE COMPANY DATA USING INDEX
         """
         # Changed value here
-        company_idx = (17, 19)
+        company_idx = (6, 8)
         companies = company_df['company_name'].values.tolist()[company_idx[0]:company_idx[1]]
     #import ipdb; ipdb.set_trace()
     cxos = company_df['cxo'].values.tolist()[company_idx[0]:company_idx[1]]
