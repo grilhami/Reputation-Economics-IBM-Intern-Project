@@ -124,12 +124,8 @@ def process_news_urls(urls_path):
     file_content = cos_object.get()['Body'].read().decode('utf-8')
 
     urls = file_content.split("\n")
-    urls = list(urls)
-
-    for i in urls:
-        konten = get_url_content(i)
-        print(konten)
-
+    # Remove empty string from list
+    urls = list(filter(None, urls))
     contents = list(map(get_url_content, urls))
     return contents
 
