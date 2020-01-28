@@ -1,32 +1,58 @@
+import json, csv, time, requests
+import ibm_boto3
+from os.path import join, dirname
+
+from bs4 import BeautifulSoup
+from io import BytesIO
+from tika import parser
+
+from ibm_botocore.client import Config, ClientError
 from ibm_watson import PersonalityInsightsV3, NaturalLanguageUnderstandingV1, DiscoveryV1
 from ibm_watson.natural_language_understanding_v1 import Features, EntitiesOptions, KeywordsOptions
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
-from os.path import join, dirname
-import json, csv, time
+
+from settings import (
+    PERSONALITY_INSIGHT_AUTHENTICATOR,
+    PERSONALITY_INSIGHT_SERVICE_URL,
+    DISCOVERY_AUTHENTICATOR,
+    DISCOVERY_SERVICE_URL,
+    COS_ENDPOINT,
+    COS_API_KEY_ID,
+    COS_AUTH_ENDPOINT,
+    COS_RESOURCE_CRN,
+    BUCKET_NAME
+)
+
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)\
+     AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+
+
+# COS Instance
+cos = ibm_boto3.resource("s3",
+    ibm_api_key_id=COS_API_KEY_ID,
+    ibm_auth_endpoint=COS_AUTH_ENDPOINT,
+    config=Config(signature_version="oauth"),
+    endpoint_url=COS_ENDPOINT,
+    ibm_service_instance_id=COS_RESOURCE_CRN,
+            
+)
 
 # Personality Insight Authenticator
-authenticator = IAMAuthenticator('ECmiZK1SBaPna4NRiSjIwUkwZAJRAOf3vrkuhCfpZp88')
+authenticator = IAMAuthenticator(PERSONALITY_INSIGHT_AUTHENTICATOR)
 personality_insights = PersonalityInsightsV3(
     version='2017-10-13',
     authenticator=authenticator
 )
-personality_insights.set_service_url('https://api.us-south.personality-insights.watson.cloud.ibm.com/instances/1a6f55c5-2b27-4ad1-92a3-c36b6bf9de49')
+personality_insights.set_service_url(PERSONALITY_INSIGHT_SERVICE_URL)
 
-# NLU Authenticator
-authenticator = IAMAuthenticator('0TUqw2W7ZNzSn7sYo37SPm9JHK5VG7Fq9TWHoXuxItBy')
-NLUService = NaturalLanguageUnderstandingV1(
-    version='2019-07-12',
-    authenticator=authenticator
-)
-NLUService.set_service_url('https://api.us-south.natural-language-understanding.watson.cloud.ibm.com/instances/77166e19-c4c0-450f-a933-a9cfb4f058a6')
 
 # Discovery Authenticator
-authenticator = IAMAuthenticator('sT2M6WUORELnxZq6vXj7n53kwQbpf3Zj3G8vXlvQNsEE')
+authenticator = IAMAuthenticator(DISCOVERY_AUTHENTICATOR)
 DiscoveryService = DiscoveryV1(
     version='2019-11-22',
     authenticator=authenticator
 )
-DiscoveryService.set_service_url('https://api.us-south.discovery.watson.cloud.ibm.com/instances/3e77ba4f-60f7-40cc-91ff-46d72fba9f29')
+DiscoveryService.set_service_url(DISCOVERY_SERVICE_URL)
 
 # Text Output
 """
@@ -61,6 +87,39 @@ def outputTxt(personality_insights, NLUService):
 
     print("NLU's JSON written to text file successfully!")
 """
+def get_url_content(url):
+    headers = {
+        'User-Agent': USER_AGENT
+    }
+
+    session = requests.Session()
+    adapter = requests.adapters.HTTPAdapter(max_retries=20)
+
+    session.mount('https://', adapter)
+    session.mount('http://', adapter)
+
+    # Get content from source
+    content_request = session.get(url, headers=headers)
+
+    soup = BeautifulSoup(content_request.content, "lxml")
+    return soup.prettify()
+
+
+def process_pdf_path(pdf_path):
+    databytes = sample_object = cos.Object(BUCKET_NAME, pdf_path).get()['Body'].read()
+    buffer_data = BytesIO(databytes)
+    content = parser.from_buffer(buffer_data)
+    return content['content'].replace("\n","")
+
+def process_news_urls(urls_path):
+    cos_object = cos.Object(BUCKET_NAME, urls_path)
+    file_content = cos_object.get()['Body'].read().decode('utf-8')
+
+    urls = file_content.split("\n")
+
+    contents = list(map(get_url_content, urls))
+    return contents
+
 
 # CSV Output (no NLU)
 def outputCSV(personality_insights, NLUService, company_name):

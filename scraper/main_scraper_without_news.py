@@ -60,7 +60,7 @@ def process_excel(df):
 
     df = df[df['cxo'].notnull()]
 
-    fix_companies = lambda x: x.lower().replace(" tbk.", "").replace(" (persero)","").replace("."," _")
+    fix_companies = lambda x: x.lower().replace(" tbk.", "").replace(" (persero)","")
     df['company_name'] = df['company_name'].apply(fix_companies)
     
 

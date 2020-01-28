@@ -66,15 +66,38 @@ def get_analysis_data():
 
     sql = "SELECT * FROM FFZ03558.SOURCE"
     stmt = ibm_db.exec_immediate(conn, sql)
-    tabel = PrettyTable()
-    tabel.field_names = ["Name", "CXO", "Path (PDF)", "Path (YouTube)", "Links", "Save Date (PDF)", "Save Date (YouTube)", "Save Date (News URL)"]   
+    # Tweak it with dictionary.
+    # tabel = PrettyTable()
+    # tabel.field_names = ["Name", "CXO", "Path (PDF)", "Path (YouTube)", "Links", "Save Date (PDF)", "Save Date (YouTube)", "Save Date (News URL)"]  
 
-    tuple = ibm_db.fetch_tuple(stmt)
-    while tuple != False:
-        tabel.add_row([tuple[0], tuple[1], tuple[2], tuple[3], tuple[4], tuple[5], tuple[6], tuple[7]])
-        tuple = ibm_db.fetch_tuple(stmt)
+    table_dict = {
+        "name": [],
+        "cxo": [],
+        "pdf_path": [],
+        "youtube_path": [],
+        "news_urls_path": [],
+        "pdf_stored_date": [],
+        "youtube_stored_date": [],
+        "news_stored_date":[]
+    }
 
-    print(tabel)
+
+    tuple_data = ibm_db.fetch_tuple(stmt)
+    while tuple_data != False:
+        # tabel.add_row([tuple[0], tuple[1], tuple[2], tuple[3], tuple[4], tuple[5], tuple[6], tuple[7]])
+
+        table_dict['name'].append(tuple_data[0])
+        table_dict['cxo'].append(tuple_data[1])
+        table_dict['pdf_path'].append(tuple_data[2])
+        table_dict['youtube_path'].append(tuple_data[3])
+        table_dict['news_urls_path'].append(tuple_data[4])
+        table_dict['pdf_stored_date'].append(tuple_data[5])
+        table_dict['youtube_stored_date'].append(tuple_data[6])
+        table_dict['news_stored_date'].append(tuple_data[7])
+
+        tuple_data = ibm_db.fetch_tuple(stmt)
+
+    return table_dict
 
 ##### SELECT Statement to call all the data inside the database.
 # get_analysis_data()
