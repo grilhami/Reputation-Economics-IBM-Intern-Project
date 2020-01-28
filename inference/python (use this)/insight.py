@@ -1,4 +1,5 @@
-import json, csv, time, requests
+import json, csv, time
+import requests
 import ibm_boto3
 from os.path import join, dirname
 
@@ -23,9 +24,11 @@ from settings import (
     BUCKET_NAME
 )
 
+# export PYTHONPATH=/path/to/orm:$PYTHONPATH
+from orm import get_analysis_data
+
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)\
      AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
-
 
 # COS Instance
 cos = ibm_boto3.resource("s3",
@@ -33,8 +36,7 @@ cos = ibm_boto3.resource("s3",
     ibm_auth_endpoint=COS_AUTH_ENDPOINT,
     config=Config(signature_version="oauth"),
     endpoint_url=COS_ENDPOINT,
-    ibm_service_instance_id=COS_RESOURCE_CRN,
-            
+    ibm_service_instance_id=COS_RESOURCE_CRN, 
 )
 
 # Personality Insight Authenticator
@@ -87,11 +89,13 @@ def outputTxt(personality_insights, NLUService):
 
     print("NLU's JSON written to text file successfully!")
 """
+
 def get_url_content(url):
     headers = {
         'User-Agent': USER_AGENT
     }
 
+    print(url)
     session = requests.Session()
     adapter = requests.adapters.HTTPAdapter(max_retries=20)
 
@@ -101,25 +105,75 @@ def get_url_content(url):
     # Get content from source
     content_request = session.get(url, headers=headers)
 
-    soup = BeautifulSoup(content_request.content, "lxml")
-    return soup.prettify()
+    # Used to prevent the infamous Missing Schema Error.
+    print(content_request)
+    errorPreventer = content_request.content
 
+    soup = BeautifulSoup(errorPreventer, "lxml")
+    return soup.prettify()
 
 def process_pdf_path(pdf_path):
     databytes = sample_object = cos.Object(BUCKET_NAME, pdf_path).get()['Body'].read()
     buffer_data = BytesIO(databytes)
     content = parser.from_buffer(buffer_data)
-    return content['content'].replace("\n","")
+    parsed = content['content'].replace("\n","")
+    return parsed
 
 def process_news_urls(urls_path):
     cos_object = cos.Object(BUCKET_NAME, urls_path)
     file_content = cos_object.get()['Body'].read().decode('utf-8')
 
     urls = file_content.split("\n")
+    urls = list(urls)
+
+    for i in urls:
+        konten = get_url_content(i)
+        print(konten)
 
     contents = list(map(get_url_content, urls))
     return contents
 
+def PersonalityInsightProcessor(personality_insights):
+    kontenHasil = get_analysis_data()
+
+    # Not Available Data - So we got to access each index one by one.
+    # - ACES, Sentul City, BTPS
+
+    # Logic C (Resume From Index at LQ45.XLSX minus 3 (ex: Gudang Garam is at 49, so set the i to 26))
+    i = 26
+
+    # Convert to list for indexing. Kebiasaan pake array soalnya.
+    # Popped because Ace Hardware does NOT exist in IBM COS. It'll cause an error.
+    pathHasilPDF = list(kontenHasil.get('pdf_path'))
+    pathName = list(kontenHasil.get('name'))
+    pathName.pop(0)
+    pathHasilPDF.pop(0)
+
+    # Set this to LQ45.XLSX index minus 3, same as above.
+    for content in pathHasilPDF[26:]:
+        processor = process_pdf_path(content)
+        response = personality_insights.profile(
+            processor,
+            accept="text/csv",
+            content_type='text/plain;charset=utf-8',
+            consumption_preferences=True,
+            csv_headers=False,
+            raw_scores=True).get_result()
+        profile = response.content
+        print(profile)
+        insertToCSV(profile, pathName[i])
+        i += 1
+
+def insertToCSV(profile, company_name):
+    with open('resultsCSV.csv', 'a', newline='') as csvfile:
+        penulis = csv.writer(csvfile, delimiter=',')
+        cr = csv.reader(profile.decode('utf-8').splitlines())
+        my_list = list(cr)
+        for row in my_list:
+            row.insert(0, company_name)
+            penulis.writerow(row)
+            print(row)
+    print("Written to CSV file successfully!")
 
 # CSV Output (no NLU)
 def outputCSV(personality_insights, NLUService, company_name):
@@ -145,6 +199,16 @@ def outputCSV(personality_insights, NLUService, company_name):
     print("Written to CSV file successfully!")
 
 # Inference / Analysis with Discovery
+def DiscoveryProcessor(DiscoveryService):
+    kontenHasil = get_analysis_data()
+    pathHasilNews = list(kontenHasil.get('news_urls_path'))
+    print(pathHasilNews)
+    
+    for content in pathHasilNews:
+        hasil = process_news_urls(content)
+        print(hasil)
+
+
 def discoveryAnalysis(DiscoveryService, company_name):
     # Add new env.
     response = DiscoveryService.create_environment(
@@ -257,8 +321,10 @@ def discoveryAnalysis(DiscoveryService, company_name):
 def main():
     # Obsolete: outputTxt(personality_insights, NLUService)  
     # Run this by changing the parameters.
-    # outputCSV(personality_insights, NLUService, 'Gudang Garam Tbk.')
-    discoveryAnalysis(DiscoveryService, 'Gudang Garam Tbk.')
+    # outputCSV(personality_insights, NLUService, 'sentul city')
+    # discoveryAnalysis(DiscoveryService, 'Gudang Garam Tbk.')
+    # PersonalityInsightProcessor(personality_insights)
+    DiscoveryProcessor(DiscoveryService)
 
 if __name__ == "__main__":
     main()
