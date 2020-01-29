@@ -95,7 +95,6 @@ def get_url_content(url):
         'User-Agent': USER_AGENT
     }
 
-    print(url)
     session = requests.Session()
     adapter = requests.adapters.HTTPAdapter(max_retries=20)
 
@@ -105,11 +104,9 @@ def get_url_content(url):
     # Get content from source
     content_request = session.get(url, headers=headers)
 
-    # Used to prevent the infamous Missing Schema Error.
-    print(content_request)
-    errorPreventer = content_request.content
-
-    soup = BeautifulSoup(errorPreventer, "lxml")
+    soup = BeautifulSoup(content_request.content, "lxml")
+    for script in soup(["script", "style"]):
+        script.decompose()
     return soup.prettify()
 
 def process_pdf_path(pdf_path):
@@ -198,12 +195,138 @@ def outputCSV(personality_insights, NLUService, company_name):
 def DiscoveryProcessor(DiscoveryService):
     kontenHasil = get_analysis_data()
     pathHasilNews = list(kontenHasil.get('news_urls_path'))
-    print(pathHasilNews)
-    
-    for content in pathHasilNews:
-        hasil = process_news_urls(content)
-        print(hasil)
 
+    # Add new env.
+    response = DiscoveryService.create_environment(
+        name="My Testing Environment",
+        description="Latian"
+    ).get_result()
+    print(json.dumps(response, indent=2))
+
+    hasil = json.dumps(response, indent = 2)
+    kamus = json.loads(hasil)
+        
+    environmentID = kamus['environment_id']
+    print(environmentID)
+
+    # Add new config for keyword extraction
+    with open('config.json', 'r') as config_data:
+        data = json.load(config_data)
+        new_config = DiscoveryService.create_configuration(
+            environmentID,
+            data['name'],
+            description=data['description'],
+            conversions=data['conversions'],
+            enrichments=data['enrichments'],
+            normalizations=data['normalizations']
+        ).get_result()
+
+    print(json.dumps(new_config, indent=2))
+
+    # Get configuration id.
+    configs = DiscoveryService.list_configurations(environmentID).get_result()
+    print(json.dumps(configs, indent=2))
+    hasil = json.dumps(configs, indent=2)
+    kamus = json.loads(hasil)
+    configurationID = kamus['configurations'][1]['configuration_id']
+        
+    # Set the configuration for keyword extraction.
+    # Add new collection.
+    new_collection = DiscoveryService.create_collection(
+        environment_id = environmentID,
+        configuration_id = configurationID,
+        name = 'Hello World',
+        description = 'Penampung sementara untuk analisa.',
+        language = 'en'
+    ).get_result()
+    print(json.dumps(new_collection, indent=2))
+
+    hasil = json.dumps(new_collection, indent = 2)
+    kamus = json.loads(hasil)
+    collectionID = kamus['collection_id']
+
+    # ----------------------------------------------- Change value here for starting from a certain index.
+    # Add a pathHasilNews[x:] to start from a certain index. Index is x.
+    for content in pathHasilNews:
+        print("Processing data...")
+        hasil = process_news_urls(content)
+
+        # If error, then remove this line until the ----- DELETE HERE -------- sign, and uncomment the code below.
+        for i in hasil:        
+            for stringg in i:
+                # Extract to HTML.
+                with open("test-case.html", "w", encoding='utf-8') as html_file:
+                    html_file.write(i)
+                    html_file.close()
+            
+            # Dump all the results into the Discovery.
+            with open('test-case.html', 'r', encoding='utf-8') as html:
+                add_doc = DiscoveryService.add_document(environmentID, collectionID, file = html).get_result()
+            print(json.dumps(add_doc, indent=2))    
+
+            print("Adding more documents of the same company.")
+        # --------------------------------------- DELETE HERE --------------------------------------------------
+
+        # Uncomment here if the code above produces an error.
+        #for str in hasil:
+        #    # Extract to HTML.
+        #    with open("test-case.html", "w", encoding='utf-8') as html_file:
+        #        html_file.write(str)
+        #        html_file.close()
+        
+        # Dump all the results into the Discovery.
+        #with open('test-case.html', 'r', encoding='utf-8') as html:
+        #    add_doc = DiscoveryService.add_document(environmentID, collectionID, file = html).get_result()
+        #print(json.dumps(add_doc, indent=2))
+
+        # Wait for the documents to be processed.
+        print("Adding more documents of a different company... If this is the last, then ignore...")
+
+    # After all the documents have been added, then query.
+    time.sleep(20)
+    print("Time to query...")
+    queryandInsert(DiscoveryService, environmentID, collectionID)
+
+def queryandInsert(DiscoveryService, environmentID, collectionID):
+    # Query
+    query_res = DiscoveryService.query(environmentID, collectionID).get_result()
+    print(json.dumps(query_res, indent=2))
+    hasil = json.dumps(query_res, indent=2)
+    kamus = json.loads(hasil)
+
+    # Get Sentiment
+    numberofResults = kamus['matching_results']
+    tempBarisStorage = []
+    i = 0
+
+    while i < numberofResults:
+        tempBarisStorage.append(kamus['results'][i]['enriched_text']['sentiment']['document']['score'])
+        print(tempBarisStorage[i])
+        i += 1
+
+        i = 0
+        baris = 0
+        # Count the average values of the sentiment.
+        while i < numberofResults:
+            baris = tempBarisStorage[i] + baris
+            i += 1
+
+        baris = baris / numberofResults
+
+        with open('resultsDiscovery.csv', 'a', newline='\n') as csvfile:
+            temp = []
+            temp.append(baris)
+
+            tulisCSV = csv.writer(csvfile, delimiter=',')
+            tulisCSV.writerow(temp)
+
+    # Remove collection.
+    delete_collection = DiscoveryService.delete_collection(environmentID, collectionID).get_result()
+    print(json.dumps(delete_collection, indent=2))
+
+    # Delete env.
+    del_env = DiscoveryService.delete_environment(environmentID).get_result()
+    print(json.dumps(del_env, indent=2))
 
 def discoveryAnalysis(DiscoveryService, company_name):
     # Add new env.
