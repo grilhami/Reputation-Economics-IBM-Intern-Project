@@ -133,17 +133,17 @@ def PersonalityInsightProcessor(personality_insights):
     # - ACES, Sentul City, BTPS
 
     # Logic C (Resume From Index at LQ45.XLSX minus 3 (ex: Gudang Garam is at 49, so set the i to 26))
-    i = 26
+    i = 0
 
     # Convert to list for indexing. Kebiasaan pake array soalnya.
     # Popped because Ace Hardware does NOT exist in IBM COS. It'll cause an error.
     pathHasilPDF = list(kontenHasil.get('pdf_path'))
     pathName = list(kontenHasil.get('name'))
-    pathName.pop(0)
-    pathHasilPDF.pop(0)
+    #pathName.pop(0)
+    #pathHasilPDF.pop(0)
 
     # Set this to LQ45.XLSX index minus 3, same as above.
-    for content in pathHasilPDF[26:]:
+    for content in pathHasilPDF:
         processor = process_pdf_path(content)
         response = personality_insights.profile(
             processor,
@@ -192,6 +192,7 @@ def outputCSV(personality_insights, NLUService, company_name):
     print("Written to CSV file successfully!")
 
 # Inference / Analysis with Discovery
+# TODO: Tidy the damn code!
 def DiscoveryProcessor(DiscoveryService):
     kontenHasil = get_analysis_data()
     pathHasilNews = list(kontenHasil.get('news_urls_path'))
@@ -442,8 +443,8 @@ def main():
     # Run this by changing the parameters.
     # outputCSV(personality_insights, NLUService, 'sentul city')
     # discoveryAnalysis(DiscoveryService, 'Gudang Garam Tbk.')
-    # PersonalityInsightProcessor(personality_insights)
-    DiscoveryProcessor(DiscoveryService)
+    PersonalityInsightProcessor(personality_insights)
+    # DiscoveryProcessor(DiscoveryService)
 
 if __name__ == "__main__":
     main()
