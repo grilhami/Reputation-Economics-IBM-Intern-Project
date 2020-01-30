@@ -2,10 +2,12 @@ import json, csv, time
 import requests
 import ibm_boto3
 from os.path import join, dirname
+from json import JSONDecodeError
 
 from bs4 import BeautifulSoup
 from io import BytesIO
 from tika import parser
+from googletrans import Translator
 
 from ibm_botocore.client import Config, ClientError
 from ibm_watson import PersonalityInsightsV3, DiscoveryV1
@@ -68,10 +70,43 @@ def get_url_content(url):
     # Get content from source
     content_request = session.get(url, headers=headers)
 
-    soup = BeautifulSoup(content_request.content, "lxml")
-    for script in soup(["script", "style"]):
-        script.decompose()
-    return soup.prettify()
+    # Alternative Beautiful Soup - Get just the text.
+    soup = BeautifulSoup(content_request.content, "html.parser")
+    text = soup.find_all(text = True)
+    output = ''
+    blacklist = [
+        	'[document]',
+	        'noscript',
+	        'header',
+	        'html',
+	        'meta',
+	        'head', 
+	        'input',
+	        'script',
+            'style',
+            'footer'
+    ]
+    
+    for characters in text:
+        if characters.parent.name not in blacklist:
+            output += '{}'.format(characters)
+
+    # Remove newlines, tabspaces.
+    output = output.replace("\t", "").replace("\r", "").replace("\n", "")
+
+    # Translation
+    # Still have some bugs as of 30/01/2020!
+    try:   
+        translator = Translator()
+        output = translator.translate(output, dest="en", src="id")
+    except JSONDecodeError as err:
+        print(err)
+        time.sleep(5)
+        translator = Translator()
+    else:
+        print(output)
+
+    return output
 
 def process_pdf_path(pdf_path):
     databytes = sample_object = cos.Object(BUCKET_NAME, pdf_path).get()['Body'].read()
@@ -124,72 +159,73 @@ def insertToCSV(profile, company_name):
             print(row)
     print("Written to CSV file successfully!")
 
-# Inference / Analysis with Discovery
+# Inference / Analysis with Discoverys
 def DiscoveryProcessor(DiscoveryService):
     kontenHasil = get_analysis_data()
     pathHasilNews = list(kontenHasil.get('news_urls_path'))
 
-    # Add new env.
-    response = DiscoveryService.create_environment(
-        name="My Testing Environment",
-        description="Latian"
-    ).get_result()
-    print(json.dumps(response, indent=2))
-
-    hasil = json.dumps(response, indent = 2)
-    kamus = json.loads(hasil)
-        
-    environmentID = kamus['environment_id']
-    print(environmentID)
-
-    # Add new config for keyword extraction
-    with open('config.json', 'r') as config_data:
-        data = json.load(config_data)
-        new_config = DiscoveryService.create_configuration(
-            environmentID,
-            data['name'],
-            description=data['description'],
-            conversions=data['conversions'],
-            enrichments=data['enrichments'],
-            normalizations=data['normalizations']
-        ).get_result()
-
-    print(json.dumps(new_config, indent=2))
-
-    # Get configuration id.
-    configs = DiscoveryService.list_configurations(environmentID).get_result()
-    print(json.dumps(configs, indent=2))
-    hasil = json.dumps(configs, indent=2)
-    kamus = json.loads(hasil)
-    configurationID = kamus['configurations'][1]['configuration_id']
-        
-    # Set the configuration for keyword extraction.
-    # Add new collection.
-    new_collection = DiscoveryService.create_collection(
-        environment_id = environmentID,
-        configuration_id = configurationID,
-        name = 'Hello World',
-        description = 'Penampung sementara untuk analisa.',
-        language = 'en'
-    ).get_result()
-    print(json.dumps(new_collection, indent=2))
-
-    hasil = json.dumps(new_collection, indent = 2)
-    kamus = json.loads(hasil)
-    collectionID = kamus['collection_id']
-
-    # ----------------------------------------------- Change value here for starting from a certain index.
+    # Change value here for starting from a certain index.
     # Add a pathHasilNews[x:] to start from a certain index. Index is x.
+    # Next, start from 15 (17 - 2, where 2 is a constant (minus header and starting from 0)).
     for content in pathHasilNews:
+        # Discovery Stuff
+        # Add new env.
+        response = DiscoveryService.create_environment(
+            name="My Testing Environment",
+            description="Latian"
+        ).get_result()
+        print(json.dumps(response, indent=2))
+
+        hasil = json.dumps(response, indent = 2)
+        kamus = json.loads(hasil)
+            
+        environmentID = kamus['environment_id']
+        print(environmentID)
+
+        # Add new config for keyword extraction
+        with open('config.json', 'r') as config_data:
+            data = json.load(config_data)
+            new_config = DiscoveryService.create_configuration(
+                environmentID,
+                data['name'],
+                description=data['description'],
+                conversions=data['conversions'],
+                enrichments=data['enrichments'],
+                normalizations=data['normalizations']
+            ).get_result()
+
+        print(json.dumps(new_config, indent=2))
+
+        # Get configuration id.
+        configs = DiscoveryService.list_configurations(environmentID).get_result()
+        print(json.dumps(configs, indent=2))
+        hasil = json.dumps(configs, indent=2)
+        kamus = json.loads(hasil)
+        configurationID = kamus['configurations'][1]['configuration_id']
+            
+        # Set the configuration for keyword extraction.
+        # Add new collection.
+        new_collection = DiscoveryService.create_collection(
+            environment_id = environmentID,
+            configuration_id = configurationID,
+            name = 'Hello World',
+            description = 'Penampung sementara untuk analisa.',
+            language = 'en'
+        ).get_result()
+        print(json.dumps(new_collection, indent=2))
+
+        hasil = json.dumps(new_collection, indent = 2)
+        kamus = json.loads(hasil)
+        collectionID = kamus['collection_id']
+
         print("Processing data...")
         hasil = process_news_urls(content)
 
-        # If error, then remove this line until the ----- DELETE HERE -------- sign, and uncomment the code below.
-        for i in hasil:        
-            for stringg in i:
+        for eachNews in hasil:   
+            for news in eachNews:
                 # Extract to HTML.
                 with open("test-case.html", "w", encoding='utf-8') as html_file:
-                    html_file.write(stringg)
+                    html_file.write(eachNews)
                     html_file.close()
             
             # Dump all the results into the Discovery.
@@ -198,22 +234,10 @@ def DiscoveryProcessor(DiscoveryService):
             print(json.dumps(add_doc, indent=2))    
 
             print("Adding more documents of the same company.")    
-        # --------------------------------------- DELETE HERE --------------------------------------------------
 
-        # Uncomment here if the code above produces an error.
-        #for str in hasil:
-        #    # Extract to HTML.
-        #    with open("test-case.html", "w", encoding='utf-8') as html_file:
-        #        html_file.write(str)
-        #        html_file.close()
-        
-        # Dump all the results into the Discovery.
-        #with open('test-case.html', 'r', encoding='utf-8') as html:
-        #    add_doc = DiscoveryService.add_document(environmentID, collectionID, file = html).get_result()
-        #print(json.dumps(add_doc, indent=2))
-        
         # After all the documents have been added, then query.
-        time.sleep(20)
+        print("Waiting for the documents to be processed...")
+        time.sleep(30)
         print("Querying current documents....")
         queryandInsert(DiscoveryService, environmentID, collectionID)
 
@@ -232,19 +256,22 @@ def queryandInsert(DiscoveryService, environmentID, collectionID):
     tempBarisStorage = []
     i = 0
 
-    while i < numberofResults:
+    # Iterate through the dictionary and get all the sentiment.
+    # Number of results should always be reduced by 1. Why? I don't know. This is a bug.
+    # If you do not reduce by 1, then the array will always be out of bounds.
+    while i < numberofResults-1:
         tempBarisStorage.append(kamus['results'][i]['enriched_text']['sentiment']['document']['score'])
         print(tempBarisStorage[i])
         i += 1
 
     # Average Values
-    i = 0
+    j = 0
     baris = 0
     
     # Count the average values of the sentiment.
-    while i < numberofResults:
-        baris = tempBarisStorage[i] + baris
-        i += 1
+    while j < len(tempBarisStorage):
+        baris = tempBarisStorage[j] + baris
+        j += 1
 
     baris = baris / numberofResults
 
