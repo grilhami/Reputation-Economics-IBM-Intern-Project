@@ -7,7 +7,9 @@ from json import JSONDecodeError
 from bs4 import BeautifulSoup
 from io import BytesIO
 from tika import parser
-from googletrans import Translator
+
+# translate_selenium is a python file
+from translate_selenium import Translate
 
 from ibm_botocore.client import Config, ClientError
 from ibm_watson import PersonalityInsightsV3, DiscoveryV1
@@ -30,6 +32,8 @@ from orm import get_analysis_data
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)\
      AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+
+translator = Translate(from_lang = 'id', to_lang = 'en')
 
 # COS Instance
 cos = ibm_boto3.resource("s3",
@@ -93,29 +97,19 @@ def get_url_content(url):
 
     # Remove newlines, tabspaces.
     output = output.replace("\t", "").replace("\r", "").replace("\n", "")
-
-    # Translation
-    # Still have some bugs as of 30/01/2020!
-    try:   
-        translator = Translator()
-        output = translator.translate(output, dest="en", src="id")
-    except JSONDecodeError as err:
-        print(err)
-        time.sleep(5)
-        translator = Translator()
-    else:
-        print(output)
-
+    output = translator.translate(output)
     return output
 
 def process_pdf_path(pdf_path):
-    databytes = sample_object = cos.Object(BUCKET_NAME, pdf_path).get()['Body'].read()
+    databytes = os.Object(BUCKET_NAME, pdf_path).get()['Body'].read()
     buffer_data = BytesIO(databytes)
     content = parser.from_buffer(buffer_data)
     parsed = content['content'].replace("\n","")
     return parsed
 
 def process_news_urls(urls_path):
+    urls_path = urls_path.replace(" ","")
+    print("Currently getting data from path {}".format(urls_path))
     cos_object = cos.Object(BUCKET_NAME, urls_path)
     file_content = cos_object.get()['Body'].read().decode('utf-8')
 
