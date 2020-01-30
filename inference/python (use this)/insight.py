@@ -7,7 +7,7 @@ from json import JSONDecodeError
 from bs4 import BeautifulSoup
 from io import BytesIO
 from tika import parser
-from translate import Translator
+from googletrans import Translator
 
 from ibm_botocore.client import Config, ClientError
 from ibm_watson import PersonalityInsightsV3, DiscoveryV1
@@ -95,15 +95,16 @@ def get_url_content(url):
     output = output.replace("\t", "").replace("\r", "").replace("\n", "")
 
     # Translation
-    #try:   
-    #    translator = Translator(to_lang='en')
-    #    output = translator.translate(output)
-    #except JSONDecodeError as err:
-    #    print(err)
-    #    time.sleep(5)
-    #    translator = Translator(to_lang='en')
-    #else:
-    #    print(output)
+    # Still have some bugs as of 30/01/2020!
+    try:   
+        translator = Translator()
+        output = translator.translate(output, dest="en", src="id")
+    except JSONDecodeError as err:
+        print(err)
+        time.sleep(5)
+        translator = Translator()
+    else:
+        print(output)
 
     return output
 
@@ -163,7 +164,7 @@ def DiscoveryProcessor(DiscoveryService):
     kontenHasil = get_analysis_data()
     pathHasilNews = list(kontenHasil.get('news_urls_path'))
 
-    # ----------------------------------------------- Change value here for starting from a certain index.
+    # Change value here for starting from a certain index.
     # Add a pathHasilNews[x:] to start from a certain index. Index is x.
     # Next, start from 15 (17 - 2, where 2 is a constant (minus header and starting from 0)).
     for content in pathHasilNews:
