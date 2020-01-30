@@ -256,7 +256,7 @@ def DiscoveryProcessor(DiscoveryService):
             for stringg in i:
                 # Extract to HTML.
                 with open("test-case.html", "w", encoding='utf-8') as html_file:
-                    html_file.write(i)
+                    html_file.write(stringg)
                     html_file.close()
             
             # Dump all the results into the Discovery.
@@ -265,7 +265,13 @@ def DiscoveryProcessor(DiscoveryService):
             print(json.dumps(add_doc, indent=2))    
 
             print("Adding more documents of the same company.")
-        # --------------------------------------- DELETE HERE --------------------------------------------------
+   
+    # After all the documents have been added, then query.
+    time.sleep(20)
+    print("Time to query...")
+    queryandInsert(DiscoveryService, environmentID, collectionID)
+    
+    # --------------------------------------- DELETE HERE --------------------------------------------------
 
         # Uncomment here if the code above produces an error.
         #for str in hasil:
@@ -281,11 +287,6 @@ def DiscoveryProcessor(DiscoveryService):
 
         # Wait for the documents to be processed.
         print("Adding more documents of a different company... If this is the last, then ignore...")
-
-    # After all the documents have been added, then query.
-    time.sleep(20)
-    print("Time to query...")
-    queryandInsert(DiscoveryService, environmentID, collectionID)
 
 def queryandInsert(DiscoveryService, environmentID, collectionID):
     # Query
@@ -304,21 +305,23 @@ def queryandInsert(DiscoveryService, environmentID, collectionID):
         print(tempBarisStorage[i])
         i += 1
 
-        i = 0
-        baris = 0
-        # Count the average values of the sentiment.
-        while i < numberofResults:
-            baris = tempBarisStorage[i] + baris
-            i += 1
+    # Average Values
+    i = 0
+    baris = 0
+    
+    # Count the average values of the sentiment.
+    while i < numberofResults:
+        baris = tempBarisStorage[i] + baris
+        i += 1
 
-        baris = baris / numberofResults
+    baris = baris / numberofResults
 
-        with open('resultsDiscovery.csv', 'a', newline='\n') as csvfile:
-            temp = []
-            temp.append(baris)
+    with open('resultsDiscovery.csv', 'a', newline='\n') as csvfile:
+        temp = []
+        temp.append(baris)
 
-            tulisCSV = csv.writer(csvfile, delimiter=',')
-            tulisCSV.writerow(temp)
+        tulisCSV = csv.writer(csvfile, delimiter=',')
+        tulisCSV.writerow(temp)
 
     # Remove collection.
     delete_collection = DiscoveryService.delete_collection(environmentID, collectionID).get_result()
