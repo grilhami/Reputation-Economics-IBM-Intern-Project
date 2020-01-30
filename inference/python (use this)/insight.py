@@ -265,17 +265,8 @@ def queryandInsert(DiscoveryService, environmentID, collectionID):
 
 # Main Function
 def main():
-<<<<<<< HEAD
-    # Obsolete: outputTxt(personality_insights, NLUService)  
-    # Run this by changing the parameters.
-    # outputCSV(personality_insights, NLUService, 'sentul city')
-    # discoveryAnalysis(DiscoveryService, 'Gudang Garam Tbk.')
-    PersonalityInsightProcessor(personality_insights)
-    # DiscoveryProcessor(DiscoveryService)
-=======
     # PersonalityInsightProcessor(personality_insights)
     DiscoveryProcessor(DiscoveryService)
->>>>>>> 5e2098165bdbdb9ffa80045762f845fcf54e557d
 
 if __name__ == "__main__":
     main()
