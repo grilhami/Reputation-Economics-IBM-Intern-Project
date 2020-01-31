@@ -28,12 +28,16 @@ from settings import (
 )
 
 # export PYTHONPATH=/path/to/orm:$PYTHONPATH
+# or SET PYTHONPATH=/path/to/orm:$PYTHONPATH
+# Final alternative is copying the orm.py file in the same directory as this script.
 from orm import get_analysis_data
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)\
      AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
 
-translator = Translate(from_lang = 'id', to_lang = 'en')
+# From translate selenium.
+#translator = Translate(from_lang = 'id', to_lang = 'en')
+counter = 0
 
 # COS Instance
 cos = ibm_boto3.resource("s3",
@@ -61,6 +65,8 @@ DiscoveryService = DiscoveryV1(
 DiscoveryService.set_service_url(DISCOVERY_SERVICE_URL)
 
 def get_url_content(url):
+    global counter
+
     headers = {
         'User-Agent': USER_AGENT
     }
@@ -71,8 +77,13 @@ def get_url_content(url):
     session.mount('https://', adapter)
     session.mount('http://', adapter)
 
-    # Get content from source
-    content_request = session.get(url, headers=headers)
+    # Get content from source. If fail, skip.
+    try:
+        content_request = session.get(url, headers=headers)
+    except Exception as e:
+        print("Error: ", e)
+        print("Current news skipped!")
+        return
 
     # Alternative Beautiful Soup - Get just the text.
     soup = BeautifulSoup(content_request.content, "html.parser")
@@ -97,17 +108,29 @@ def get_url_content(url):
 
     # Remove newlines, tabspaces.
     output = output.replace("\t", "").replace("\r", "").replace("\n", "")
+    print("Translating document number: ", counter)
+    
+    # Skip documents if more than 10 (lagging issues).
+    if counter >= 10:
+        print("Skip... more than 10 documents...")
+        return
+    
     output = translator.translate(output)
+    counter += 1
     return output
 
 def process_pdf_path(pdf_path):
-    databytes = os.Object(BUCKET_NAME, pdf_path).get()['Body'].read()
+    databytes = cos.Object(BUCKET_NAME, pdf_path).get()['Body'].read()
     buffer_data = BytesIO(databytes)
     content = parser.from_buffer(buffer_data)
     parsed = content['content'].replace("\n","")
     return parsed
 
 def process_news_urls(urls_path):
+    # Counter for document number.
+    global counter
+    counter = 0
+
     urls_path = urls_path.replace(" ","")
     print("Currently getting data from path {}".format(urls_path))
     cos_object = cos.Object(BUCKET_NAME, urls_path)
@@ -119,38 +142,40 @@ def process_news_urls(urls_path):
     contents = list(map(get_url_content, urls))
     return contents
 
-def PersonalityInsightProcessor(personality_insights):
-    kontenHasil = get_analysis_data()
+def personality_insight_processor(personality_insights):
+    data = get_analysis_data()
     i = 0
 
     # Convert to list for indexing.
-    pathHasilPDF = list(kontenHasil.get('pdf_path'))
-    pathName = list(kontenHasil.get('name'))
-    
+    dataPDF = list(data.get('pdf_path'))
+    company_name = list(data.get('name'))
+
     # Algorithm for analyzing.
-    for content in pathHasilPDF:
-        processor = process_pdf_path(content)
+    for content in dataPDF:
+        text = process_pdf_path(content)
         response = personality_insights.profile(
-            processor,
+            text,
             accept="text/csv",
             content_type='text/plain;charset=utf-8',
             consumption_preferences=True,
             csv_headers=False,
             raw_scores=True).get_result()
         profile = response.content
-        print(profile)
-        insertToCSV(profile, pathName[i])
+        print("Data number ", i+1, " processed! Inserting into CSV...\n\n")
+        insert_to_csv(profile, company_name[i])
         i += 1
 
-def insertToCSV(profile, company_name):
-    with open('resultsCSV.csv', 'a', newline='') as csvfile:
-        penulis = csv.writer(csvfile, delimiter=',')
+def insert_to_csv(profile, company_name):
+    with open('output/resultsCSV.csv', 'a', newline='') as csvfile:
+        cw = csv.writer(csvfile, delimiter=',')
         cr = csv.reader(profile.decode('utf-8').splitlines())
         my_list = list(cr)
         for row in my_list:
             row.insert(0, company_name)
-            penulis.writerow(row)
+            cw.writerow(row)
             print(row)
+
+    # After writing to a CSV file, print this message.
     print("Written to CSV file successfully!")
 
 # Inference / Analysis with Discoverys
@@ -160,7 +185,7 @@ def DiscoveryProcessor(DiscoveryService):
 
     # Change value here for starting from a certain index.
     # Add a pathHasilNews[x:] to start from a certain index. Index is x.
-    # Next, start from 15 (17 - 2, where 2 is a constant (minus header and starting from 0)).
+    # Example, starting from index 15 in Excel/CSV means 15 - 2 = 13, where 2 is a constant (minus header and starting from 0).
     for content in pathHasilNews:
         # Discovery Stuff
         # Add new env.
@@ -215,12 +240,15 @@ def DiscoveryProcessor(DiscoveryService):
         print("Processing data...")
         hasil = process_news_urls(content)
 
-        for eachNews in hasil:   
-            for news in eachNews:
-                # Extract to HTML.
-                with open("test-case.html", "w", encoding='utf-8') as html_file:
-                    html_file.write(eachNews)
-                    html_file.close()
+        for eachNews in hasil:
+            # Extract to HTML.
+            try:   
+                for news in eachNews:
+                    with open("test-case.html", "w", encoding='utf-8') as html_file:
+                        html_file.write(eachNews)
+                        html_file.close()
+            except Exception as e:
+                continue
             
             # Dump all the results into the Discovery.
             with open('test-case.html', 'r', encoding='utf-8') as html:
@@ -231,7 +259,7 @@ def DiscoveryProcessor(DiscoveryService):
 
         # After all the documents have been added, then query.
         print("Waiting for the documents to be processed...")
-        time.sleep(30)
+        time.sleep(15)
         print("Querying current documents....")
         queryandInsert(DiscoveryService, environmentID, collectionID)
 
@@ -253,10 +281,16 @@ def queryandInsert(DiscoveryService, environmentID, collectionID):
     # Iterate through the dictionary and get all the sentiment.
     # Number of results should always be reduced by 1. Why? I don't know. This is a bug.
     # If you do not reduce by 1, then the array will always be out of bounds.
-    while i < numberofResults-1:
-        tempBarisStorage.append(kamus['results'][i]['enriched_text']['sentiment']['document']['score'])
-        print(tempBarisStorage[i])
-        i += 1
+    # Update: Number of results should always be 10. This is a bug.
+    while i < 10:
+        try:
+            tempBarisStorage.append(kamus['results'][i]['enriched_text']['sentiment']['document']['score'])
+        except Exception as e:
+            tempBarisStorage.append(0)
+            i += 1
+        else:
+            print(tempBarisStorage[i])
+            i += 1
 
     # Average Values
     j = 0
@@ -267,7 +301,7 @@ def queryandInsert(DiscoveryService, environmentID, collectionID):
         baris = tempBarisStorage[j] + baris
         j += 1
 
-    baris = baris / numberofResults
+    baris = baris / len(tempBarisStorage)
 
     with open('resultsDiscovery.csv', 'a', newline='\n') as csvfile:
         temp = []
@@ -287,7 +321,8 @@ def queryandInsert(DiscoveryService, environmentID, collectionID):
 # Main Function
 def main():
     # PersonalityInsightProcessor(personality_insights)
-    DiscoveryProcessor(DiscoveryService)
+    personality_insight_processor(personality_insights)
+    # DiscoveryProcessor(DiscoveryService)
 
 if __name__ == "__main__":
     main()

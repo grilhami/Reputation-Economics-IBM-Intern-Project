@@ -74,7 +74,6 @@ parsel==1.5.2
 parso==0.5.2
 pexpect==4.7.0
 pickleshare==0.7.5
-pkg-resources==0.0.0
 pluggy==0.13.1
 pre-commit==2.0.1
 prettytable==0.7.2
