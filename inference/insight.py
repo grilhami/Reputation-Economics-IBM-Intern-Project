@@ -29,12 +29,14 @@ from settings import (
 
 # export PYTHONPATH=/path/to/orm:$PYTHONPATH
 # or SET PYTHONPATH=/path/to/orm:$PYTHONPATH
+# Final alternative is copying the orm.py file in the same directory as this script.
 from orm import get_analysis_data
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)\
      AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
 
-translator = Translate(from_lang = 'id', to_lang = 'en')
+# From translate selenium.
+#translator = Translate(from_lang = 'id', to_lang = 'en')
 counter = 0
 
 # COS Instance
@@ -118,7 +120,7 @@ def get_url_content(url):
     return output
 
 def process_pdf_path(pdf_path):
-    databytes = os.Object(BUCKET_NAME, pdf_path).get()['Body'].read()
+    databytes = cos.Object(BUCKET_NAME, pdf_path).get()['Body'].read()
     buffer_data = BytesIO(databytes)
     content = parser.from_buffer(buffer_data)
     parsed = content['content'].replace("\n","")
@@ -140,38 +142,40 @@ def process_news_urls(urls_path):
     contents = list(map(get_url_content, urls))
     return contents
 
-def PersonalityInsightProcessor(personality_insights):
-    kontenHasil = get_analysis_data()
+def personality_insight_processor(personality_insights):
+    data = get_analysis_data()
     i = 0
 
     # Convert to list for indexing.
-    pathHasilPDF = list(kontenHasil.get('pdf_path'))
-    pathName = list(kontenHasil.get('name'))
-    
+    dataPDF = list(data.get('pdf_path'))
+    company_name = list(data.get('name'))
+
     # Algorithm for analyzing.
-    for content in pathHasilPDF:
-        processor = process_pdf_path(content)
+    for content in dataPDF:
+        text = process_pdf_path(content)
         response = personality_insights.profile(
-            processor,
+            text,
             accept="text/csv",
             content_type='text/plain;charset=utf-8',
             consumption_preferences=True,
             csv_headers=False,
             raw_scores=True).get_result()
         profile = response.content
-        print(profile)
-        insertToCSV(profile, pathName[i])
+        print("Data number ", i+1, " processed! Inserting into CSV...\n\n")
+        insert_to_csv(profile, company_name[i])
         i += 1
 
-def insertToCSV(profile, company_name):
-    with open('resultsCSV.csv', 'a', newline='') as csvfile:
-        penulis = csv.writer(csvfile, delimiter=',')
+def insert_to_csv(profile, company_name):
+    with open('output/resultsCSV.csv', 'a', newline='') as csvfile:
+        cw = csv.writer(csvfile, delimiter=',')
         cr = csv.reader(profile.decode('utf-8').splitlines())
         my_list = list(cr)
         for row in my_list:
             row.insert(0, company_name)
-            penulis.writerow(row)
+            cw.writerow(row)
             print(row)
+
+    # After writing to a CSV file, print this message.
     print("Written to CSV file successfully!")
 
 # Inference / Analysis with Discoverys
@@ -317,7 +321,8 @@ def queryandInsert(DiscoveryService, environmentID, collectionID):
 # Main Function
 def main():
     # PersonalityInsightProcessor(personality_insights)
-    DiscoveryProcessor(DiscoveryService)
+    personality_insight_processor(personality_insights)
+    # DiscoveryProcessor(DiscoveryService)
 
 if __name__ == "__main__":
     main()
