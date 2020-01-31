@@ -2,7 +2,7 @@
 Using IBM Cloud Services to analyze company's financial performance based on CXO personality and company's reputation.
 Programmers: Gilang Ramadhan Ilhami, Nicholas Dwiarto Wirasbawa.
 
-# Reputation Economics Outline
+## Reputation Economics Outline
 - Getting all the basic information data consisting of company name, CXO, annual report link, and president director's message page on the annual report.
 - Getting all the financial data from the company annual report. Transform it into a CSV.
 - 3 programs were needed: ORM, Inference, and Scraper.
@@ -31,11 +31,9 @@ Replace `venv` with the appropriate virtual environment name.
 
 - Use `cd scraper`.
 
-- Run: 
-Mac/Linux: `export PYTHONPATH=/path/to/orm:$PYTHONPATH`. 
-Windows: Change the system variable to include the path to `orm` folder.
-Alternative: Copy the `orm.py` file into the same directory that you run your script (whether scraper or inference/insight).
-Replace `/path/to/orm` to the full path of the `orm` folder.
+- Run for Mac/Linux: `export PYTHONPATH=/path/to/orm:$PYTHONPATH`. For Windows: Change the system variable to include the path to `orm` folder. Replace `/path/to/orm` to the full path of the `orm` folder.
+
+- An alternative: Copy the `orm.py` file into the same directory that you run your script (whether scraper or inference/insight).
 
 - In `main_scrapper.py`, change the index value of list of company names as required (line 87-89).
 
@@ -44,13 +42,24 @@ Replace `/path/to/orm` to the full path of the `orm` folder.
 ## How to run Inference - Personality Insight
 - Download `chromedriver`.
 
-- Open `venv/lib/site-packages/selenium/webdriver/common/service.py` and change the cmd path (in `def start` function)to your `chromedriver.exe` file. It should be located in `C:\Users\chromedriver.exe` so Windows knows exactly what the program was doing. Set the cmd to be = `[path-to-chromedriver]`.
+- Open `venv/lib/site-packages/selenium/webdriver/common/service.py` and change the cmd path (in `def start` function)to your `chromedriver.exe` file. It should be located in `C:\Windows\chromedriver.exe` so Windows knows exactly what the program was doing. Set the cmd to be = `[path-to-chromedriver]`.
 
 - For Mac/Linux, simply run `sudo nano /etc/paths/` and edit the path from there.
 
 - Run the test by using `python insight.py`. Make sure that you are in the inference folder.
 
 - Make sure the code in `def main()` is uncommented for `personality_insight_processor` function!
+
+## How to run Inference - Discovery
+- Download `phantomjs`.
+
+- Open `venv/lib/site-packages/selenium/webdriver/common/service.py` and change the cmd path (in `def start` function)to your `phantomjs.exe` file. It should be located in `C:\Windows\phantomjs.exe` so Windows knows exactly what the program was doing. Set the cmd to be = `[path-to-phantomjs]`.
+
+- For Mac/Linux, simply run `sudo nano /etc/paths/` and edit the path from there.
+
+- Run the test by using `python insight.py`. Make sure that you are in the inference folder.
+
+- Make sure the code in `def main()` is uncommented for `discovery_processor` function!
 
 ## Additional Information regarding the `translate_selenium.py` file
 An issue was encountered with using Python's Google Translate API for translation. In order to overcome this, a file named `translate_selenium.py` was created to handle translation. 
