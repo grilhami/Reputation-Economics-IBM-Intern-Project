@@ -21,10 +21,7 @@ Programmers: Gilang Ramadhan Ilhami, Nicholas Dwiarto Wirasbawa.
 
 - Create a virtual environment with Python 3.6+ and install the required dependencies listed in requirements.txt by running  `pip install -r requirements.txt`. For conveniency, the virtual environment should be created in the same directory level as the repository. Suggested virtual environment name is `.venv`.
 
-- Activate the virtual environment by running:
-Mac/Linux: `source venv/bin/activate`. 
-Windows: `C:\path\to\venv\Scripts\activate.bat`
-Replace `venv` with the appropriate virtual environment name.
+- Activate the virtual environment by running the commands on Mac/Linux: `source venv/bin/activate`. On Windows: `C:\path\to\venv\Scripts\activate.bat`. Replace `venv` with the appropriate virtual environment name.
 
 ## How to run Scraper
 - Use `cd path-to-repo-folder`.
