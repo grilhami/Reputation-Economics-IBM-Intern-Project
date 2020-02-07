@@ -47,7 +47,7 @@ Programmers: Gilang Ramadhan Ilhami, Nicholas Dwiarto Wirasbawa.
 ## How to run Inference - Personality Insight
 - Download `chromedriver`.
 
-- Open `venv/lib/site-packages/selenium/webdriver/common/service.py` and change the cmd path (in `def start` function)to your `chromedriver.exe` file. It should be located in `C:\Windows\chromedriver.exe` so Windows knows exactly what the program was doing. Set the cmd to be = `[path-to-chromedriver]`.
+- Open `venv/lib/site-packages/selenium/webdriver/common/service.py` and change the cmd path (in `def start` function, line 70) to your `chromedriver.exe` file. It should be located in `C:\Windows\chromedriver.exe` so Windows knows exactly what the program was doing. Set the cmd to be = `[path-to-chromedriver]`.
 
 - For Mac/Linux, simply run `sudo nano /etc/paths/` and edit the path from there.
 
@@ -58,13 +58,13 @@ Programmers: Gilang Ramadhan Ilhami, Nicholas Dwiarto Wirasbawa.
 ## How to run Inference - Discovery
 - Download `phantomjs`.
 
-- Open `venv/lib/site-packages/selenium/webdriver/common/service.py` and change the cmd path (in `def start` function)to your `phantomjs.exe` file. It should be located in `C:\Windows\phantomjs.exe` so Windows knows exactly what the program was doing. Set the cmd to be = `[path-to-phantomjs]`.
+- Open `venv/lib/site-packages/selenium/webdriver/common/service.py` and change the cmd path (in `def start` function, line 70) to your `phantomjs.exe` file. It should be located in `C:\Windows\phantomjs.exe` so Windows knows exactly what the program was doing. Set the cmd to be = `[path-to-phantomjs]`.
 
 - For Mac/Linux, simply run `sudo nano /etc/paths/` and edit the path from there.
 
 - Run the test by using `python insight.py`. Make sure that you are in the inference folder.
 
-- Make sure the code in `def main()` is uncommented for `discovery_processor` function!
+- Make sure the code in `def main()` is uncommented for `DiscoveryProcessor()` function!
 
 ## Additional Information regarding the `translate_selenium.py` file
 An issue was encountered with using Python's Google Translate API for translation. In order to overcome this, a file named `translate_selenium.py` was created to handle translation. 
