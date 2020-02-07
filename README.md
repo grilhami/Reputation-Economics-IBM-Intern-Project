@@ -27,9 +27,25 @@ Programmers: Gilang Ramadhan Ilhami, Nicholas Dwiarto Wirasbawa.
 
 - Helper link to install virtual environment for MacOS: https://sourabhbajaj.com/mac-setup/Python/virtualenv.html.
 
-- Activate the virtual environment by running the commands on Mac/Linux: `source venv/bin/activate`. On Windows: `C:\path\to\venv\Scripts\activate.bat`. Replace `venv` with the appropriate virtual environment name.
+- Activate the virtual environment by running the commands (in the Command Prompt) on Mac/Linux: `source venv/bin/activate`. On Windows: `C:\path\to\venv\Scripts\activate.bat`. Replace `venv` with the appropriate virtual environment name.
 
-- Create a virtual environment with Python 3.6+ and install the required dependencies listed in requirements.txt by running  `pip install -r requirements.txt`. For conveniency, the virtual environment should be created in the same directory level as the repository. Suggested virtual environment name is `.venv`.
+- Install the required dependencies listed in requirements.txt by running  `pip install -r requirements.txt`. For conveniency, the virtual environment should be created in the same directory level as the repository. Suggested virtual environment name is `.venv`.
+
+## Quick Start Guide - Running Personality Insight and Discovery.
+- Make sure that the Initial Setup is done.
+
+- Download `phantomjs`. Link is here: https://phantomjs.org/download.html.
+
+- Open (in file explorer) `venv/lib/site-packages/selenium/webdriver/common/service.py` and change the cmd path (in `def start` function, line 70) to your `phantomjs.exe` file. It should be located in `C:\Windows\phantomjs.exe` so Windows knows exactly what the program was doing. Set the cmd from `[self.path]` to be = `[path-to-phantomjs]`.
+
+- For Mac/Linux, simply run `sudo nano /etc/paths/` and edit the path from there.
+
+- Run the test by using `python insight.py`. Make sure that you are in the inference folder by `cd inference` in the command line.
+
+- Make sure the code in `def main()` is uncommented for `DiscoveryProcessor()` or the `personality_insight_processor()` function!
+
+# Additional Notes
+Scraper does not have anything to do with IBM Cloud Services, but if anybody wants to try the scraper, please follow the following procedures:
 
 ## How to run Scraper
 - Use `cd path-to-repo-folder`.
@@ -44,7 +60,7 @@ Programmers: Gilang Ramadhan Ilhami, Nicholas Dwiarto Wirasbawa.
 
 - Run the command `python main_scraper.py --path_to_excel path/to/excel_file` inside the `scraper` folder. Replace `path/to/excel_file` with the actual path to the excel file. 
 
-## How to run Inference - Personality Insight
+## Driver for Scraper
 - Download `chromedriver`.
 
 - Open `venv/lib/site-packages/selenium/webdriver/common/service.py` and change the cmd path (in `def start` function, line 70) to your `chromedriver.exe` file. It should be located in `C:\Windows\chromedriver.exe` so Windows knows exactly what the program was doing. Set the cmd to be = `[path-to-chromedriver]`.
@@ -54,17 +70,6 @@ Programmers: Gilang Ramadhan Ilhami, Nicholas Dwiarto Wirasbawa.
 - Run the test by using `python insight.py`. Make sure that you are in the inference folder.
 
 - Make sure the code in `def main()` is uncommented for `personality_insight_processor` function!
-
-## How to run Inference - Discovery
-- Download `phantomjs`.
-
-- Open `venv/lib/site-packages/selenium/webdriver/common/service.py` and change the cmd path (in `def start` function, line 70) to your `phantomjs.exe` file. It should be located in `C:\Windows\phantomjs.exe` so Windows knows exactly what the program was doing. Set the cmd to be = `[path-to-phantomjs]`.
-
-- For Mac/Linux, simply run `sudo nano /etc/paths/` and edit the path from there.
-
-- Run the test by using `python insight.py`. Make sure that you are in the inference folder.
-
-- Make sure the code in `def main()` is uncommented for `DiscoveryProcessor()` function!
 
 ## Additional Information regarding the `translate_selenium.py` file
 An issue was encountered with using Python's Google Translate API for translation. In order to overcome this, a file named `translate_selenium.py` was created to handle translation. 

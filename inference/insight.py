@@ -35,8 +35,8 @@ from orm import get_analysis_data
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)\
      AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
 
-# From translate selenium.
-#translator = Translate(from_lang = 'id', to_lang = 'en')
+# From translate selenium (uncomment this part!).
+translator = Translate(from_lang = 'id', to_lang = 'en')
 counter = 0
 
 # COS Instance
@@ -303,7 +303,7 @@ def queryandInsert(DiscoveryService, environmentID, collectionID):
 
     baris = baris / len(tempBarisStorage)
 
-    with open('resultsDiscovery.csv', 'a', newline='\n') as csvfile:
+    with open('output/resultsDiscovery.csv', 'a', newline='\n') as csvfile:
         temp = []
         temp.append(baris)
 
@@ -320,9 +320,9 @@ def queryandInsert(DiscoveryService, environmentID, collectionID):
 
 # Main Function
 def main():
-    # PersonalityInsightProcessor(personality_insights)
+    # Uncomment for one of the feature!
     personality_insight_processor(personality_insights)
-    # DiscoveryProcessor(DiscoveryService)
+    DiscoveryProcessor(DiscoveryService)
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,8 @@
 # Constants for Personality Insight and Discovery
 PERSONALITY_INSIGHT_AUTHENTICATOR = "ECmiZK1SBaPna4NRiSjIwUkwZAJRAOf3vrkuhCfpZp88"
 PERSONALITY_INSIGHT_SERVICE_URL = "https://api.us-south.personality-insights.watson.cloud.ibm.com/instances/1a6f55c5-2b27-4ad1-92a3-c36b6bf9de49"
-DISCOVERY_AUTHENTICATOR = "sT2M6WUORELnxZq6vXj7n53kwQbpf3Zj3G8vXlvQNsEE"
-DISCOVERY_SERVICE_URL = "https://api.us-south.discovery.watson.cloud.ibm.com/instances/3e77ba4f-60f7-40cc-91ff-46d72fba9f29"
+DISCOVERY_AUTHENTICATOR = "EmujDAB_B4oGZFLbqJt-i2PQHle17G50YVimR0Z5UH7c"
+DISCOVERY_SERVICE_URL = "https://api.au-syd.discovery.watson.cloud.ibm.com/instances/b1aa7e5c-d2ba-4da8-8a1c-5455eabf8b01"
 
 # Constants for IBM COS values
 COS_ENDPOINT = "https://s3.us-south.cloud-object-storage.appdomain.cloud"
