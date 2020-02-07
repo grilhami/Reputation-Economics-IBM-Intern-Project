@@ -16,23 +16,31 @@ Programmers: Gilang Ramadhan Ilhami, Nicholas Dwiarto Wirasbawa.
 - Merge all of resulting CSV's into one CSV.
 - Data analysis!
 
-## How to Install
-- Export or pull the repository.
+## Initial Setup
+- Use Python 3.6+ to run this script.
 
-- Create a virtual environment with Python 3.6+ and install the required dependencies listed in requirements.txt by running  `pip install -r requirements.txt`. For conveniency, the virtual environment should be created in the same directory level as the repository. Suggested virtual environment name is `.venv`.
+- Download or clone the repository.
+
+- Create a virtual environment with Python. 
+
+- Helper link to install virtual environment for Windows: https://programwithus.com/learn-to-code/Pip-and-virtualenv-on-Windows/.
+
+- Helper link to install virtual environment for MacOS: https://sourabhbajaj.com/mac-setup/Python/virtualenv.html.
 
 - Activate the virtual environment by running the commands on Mac/Linux: `source venv/bin/activate`. On Windows: `C:\path\to\venv\Scripts\activate.bat`. Replace `venv` with the appropriate virtual environment name.
+
+- Create a virtual environment with Python 3.6+ and install the required dependencies listed in requirements.txt by running  `pip install -r requirements.txt`. For conveniency, the virtual environment should be created in the same directory level as the repository. Suggested virtual environment name is `.venv`.
 
 ## How to run Scraper
 - Use `cd path-to-repo-folder`.
 
 - Use `cd scraper`.
 
-- Run for Mac/Linux: `export PYTHONPATH=/path/to/orm:$PYTHONPATH`. For Windows: Change the system variable to include the path to `orm` folder. Replace `/path/to/orm` to the full path of the `orm` folder.
+- Run for Mac/Linux: `export PYTHONPATH=/path/to/orm:$PYTHONPATH`. For Windows: Change the system variable to include the path to `orm` folder. Replace `/path/to/orm` to the full path of the `orm` folder. Helper link could be found here: https://www.computerhope.com/issues/ch000549.htm.
 
 - An alternative: Copy the `orm.py` file into the same directory that you run your script (whether scraper or inference/insight).
 
-- In `main_scrapper.py`, change the index value of list of company names as required (line 87-89).
+- In `main_scraper.py`, change the index value of list of company names as required (line 87-89).
 
 - Run the command `python main_scraper.py --path_to_excel path/to/excel_file` inside the `scraper` folder. Replace `path/to/excel_file` with the actual path to the excel file. 
 
