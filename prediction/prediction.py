@@ -137,7 +137,49 @@ def get_config_id():
         config_id = configs['configurations'][0]['configuration_id']
         return config_id
 
-def get_overall_sentiment(filepath):
+def get_collection_id():
+    environment_id = get_environment_id()
+    config_id = get_config_id()
+
+    collections = discovery.list_collections(environment_id).get_result()['collections']
+
+    if len(collections) != 0:
+        right_name = lambda x: True if collections[x]['name'] == 'Company CXO Reputation' else False
+        collection_id, = [collections[i]['collection_id'] for i in range(len(collections)) if right_name(i)]
+        return collection_id
+    else:
+        new_collection = discovery.create_collection(
+                                                    environment_id=environment_id,
+                                                    configuration_id=config_id, 
+                                                    name="Company CXO Reputation", 
+                                                    description="News Collections",
+                                                    language='en').get_result()
+        collection_id = new_collection['collection_id']
+        return collection_id
+
+def reset_collection(current_collection_id):
+    environment_id = get_environment_id()
+    config_id = get_config_id()
+
+    discovery.delete_collection(
+                                environment_id, 
+                                current_collection_id).get_result()
+    new_collection = discovery.create_collection(
+                                                environment_id=environment_id,
+                                                configuration_id=config_id, 
+                                                name="Company CXO Reputation", 
+                                                description="News Collections",
+                                                language='en').get_result()
+    collection_id = new_collection['collection_id']
+    return collection_id
+
+
+def get_overall_sentiment(filepath, company_name, collection_reset=True):
+    environment_id = get_environment_id()
+    collection_id = get_collection_id()
+
+    if collection_reset:
+        reset_collection(collection_id)
     
     with open(filepath, "r") as f:
         news_urls = f.read().split("\n")
@@ -145,9 +187,22 @@ def get_overall_sentiment(filepath):
     # Generator for content
     news_contents = (get_news_content(url) for url in news_urls)
 
-    with tempfile.NamedTemporaryFile as tempfile:
-        tempfile.name = tempfile.name + ".html"
+    for _ in range(len(news_urls)):
 
+        content = next(news_contents)
+
+        with tempfile.NamedTemporaryFile as tempfile:
+            tempfile.name = tempfile.name + ".html"
+            tempfile.write(str.encode(content))
+            tempfile.seek(0)
+            discovery.add_document(environment_id,
+                                    collection_id, 
+                                    file =f).get_result()
+    
+    query_result = discovery.query(environment_id, 
+                                    collection_id, 
+                                    query=company_name).get_result()
+    return query_result
 
     
     
