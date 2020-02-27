@@ -1,5 +1,6 @@
 import argparse
 import json
+import tempfile
 import requests
 
 from bs4 import BeautifulSoup
@@ -35,6 +36,8 @@ PERSONALITY_INSIGHT_SERVICE_URL = config['personality-insight']['url']
 DISCOVERY_AUTHENTICATOR = config['discovery']['apikey']
 DISCOVERY_SERVICE_URL = config['discovery']['url']
 
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)\
+     AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
 
 # Personality Insight Authenticator
 authenticator = IAMAuthenticator(PERSONALITY_INSIGHT_AUTHENTICATOR)
@@ -46,11 +49,11 @@ personality_insights.set_service_url(PERSONALITY_INSIGHT_SERVICE_URL)
 
 # Discovery Authenticator
 authenticator = IAMAuthenticator(DISCOVERY_AUTHENTICATOR)
-DiscoveryService = DiscoveryV1(
+discovery = DiscoveryV1(
     version='2019-11-22',
     authenticator=authenticator
 )
-DiscoveryService.set_service_url(DISCOVERY_SERVICE_URL)
+discovery.set_service_url(DISCOVERY_SERVICE_URL)
 
 
 def get_self_expresion(filepath):
@@ -70,4 +73,81 @@ def get_self_expresion(filepath):
 
     return percentile
 
+def get_news_content(url):
+    headers = {
+        'User-Agent': USER_AGENT
+    }
 
+    session = requests.Session()
+    adapter = requests.adapters.HTTPAdapter(max_retries=20)
+
+    session.mount('https://', adapter)
+    session.mount('http://', adapter)
+
+    # Get content from source. If fail, skip.
+    try:
+        content_request = session.get(url, headers=headers)
+    except Exception as e:
+        print(f"Something went wrong when retrieving content from {url}: {e}")
+        return
+
+    soup = BeautifulSoup(content_request.content, "html.parser")
+    text = soup.prettify()
+    return text
+
+def get_environment_id():
+    environments = discovery.list_environments().get_result()['environments']
+
+    assert len(environments) != 0, "Sytem Environment nor detected."
+
+    if len(environments) > 1:
+        environment_id = environments[1]['environment_id']
+        return environment_id
+    else:
+        discovery.create_environment(
+                                    name="my_environment",
+                                    description="My environment"
+                                ).get_result()
+        environments= discovery.list_environments().get_result()
+
+        environment_id = environments['environments'][1]['environment_id']
+        return environment_id
+    
+def get_config_id():
+    environment_id = get_environment_id()
+
+    configs = discovery.list_configurations(environment_id).get_result()['configurations']
+
+    if len(configs) != 0:
+        config_id = configs[0]['configuration_id']
+        return config_id
+    else:
+        with open('discovery_config.json', 'r') as config_data:
+            data = json.load(config_data)
+            new_config = discovery.create_configuration(
+                environment_id,
+                data['name'],
+                description=data['description'],
+                conversions=data['conversions'],
+                enrichments=data['enrichments'],
+                normalizations=data['normalizations']
+            ).get_result()
+
+        configs = discovery.list_configurations(environment_id).get_result()
+        config_id = configs['configurations'][0]['configuration_id']
+        return config_id
+
+def get_overall_sentiment(filepath):
+    
+    with open(filepath, "r") as f:
+        news_urls = f.read().split("\n")
+    
+    # Generator for content
+    news_contents = (get_news_content(url) for url in news_urls)
+
+    with tempfile.NamedTemporaryFile as tempfile:
+        tempfile.name = tempfile.name + ".html"
+
+
+    
+    
